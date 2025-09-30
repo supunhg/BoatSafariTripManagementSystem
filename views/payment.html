@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Payment - Boat Safari</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav-container">
+            <a href="/" class="logo">🚢 Boat Safari</a>
+            <ul class="nav-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/trips">Trips</a></li>
+                <li><a href="/dashboard">Dashboard</a></li>
+            </ul>
+            <div class="user-info" id="user-info">
+                <span class="user-name" id="user-name"></span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            
+            <!-- Loading State -->
+            <div id="loading" class="text-center">
+                <div class="loading" style="width: 40px; height: 40px;"></div>
+                <p>Loading payment details...</p>
+            </div>
+
+            <!-- Payment Container -->
+            <div id="payment-container" style="display: none;">
+                <h1>Complete Your Payment</h1>
+
+                <div id="alert-container"></div>
+
+                <!-- Booking Summary -->
+                <div class="card mb-3">
+                    <div class="card-header">Booking Summary</div>
+                    <div class="card-body" id="booking-summary">
+                        <!-- Booking details will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Payment Form -->
+                <div class="card">
+                    <div class="card-header">Payment Information</div>
+                    <div class="card-body">
+                        
+                        <!-- Payment Method Selection -->
+                        <div class="form-group">
+                            <label>Payment Method</label>
+                            <div style="margin-bottom: 1rem;">
+                                <label style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                                    <input type="radio" name="paymentMethod" value="card" checked style="margin-right: 0.5rem;" onchange="togglePaymentMethod()">
+                                    💳 Credit/Debit Card
+                                </label>
+                                <label style="display: flex; align-items: center;">
+                                    <input type="radio" name="paymentMethod" value="cash" style="margin-right: 0.5rem;" onchange="togglePaymentMethod()">
+                                    💵 Pay Cash on Arrival
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Card Payment Form -->
+                        <div id="card-payment-form">
+                            <div class="alert alert-info">
+                                <strong>Demo Mode:</strong> This is a dummy payment system for demonstration purposes. 
+                                Use any card details for testing.
+                            </div>
+
+                            <form id="payment-form">
+                                <div class="form-group">
+                                    <label for="card-number">Card Number</label>
+                                    <input type="text" id="card-number" class="form-control" 
+                                           placeholder="1234 5678 9012 3456" maxlength="19" required>
+                                </div>
+
+                                <div class="form-row">
+                                    <div class="form-group">
+                                        <label for="expiry-date">Expiry Date</label>
+                                        <input type="text" id="expiry-date" class="form-control" 
+                                               placeholder="MM/YY" maxlength="5" required>
+                                    </div>
+                                    <div class="form-group">
+                                        <label for="cvv">CVV</label>
+                                        <input type="text" id="cvv" class="form-control" 
+                                               placeholder="123" maxlength="4" required>
+                                    </div>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="cardholder-name">Cardholder Name</label>
+                                    <input type="text" id="cardholder-name" class="form-control" 
+                                           placeholder="John Doe" required>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="billing-address">Billing Address</label>
+                                    <textarea id="billing-address" class="form-control" rows="3" 
+                                              placeholder="123 Main St, City, State, ZIP" required></textarea>
+                                </div>
+
+                                <!-- Payment Summary -->
+                                <div class="card" style="background: #f8f9fa; border: 1px solid #dee2e6; margin-bottom: 1rem;">
+                                    <div class="card-body">
+                                        <h4>Payment Summary</h4>
+                                        <div class="flex justify-between mb-1">
+                                            <span>Subtotal:</span>
+                                            <span id="payment-subtotal">$0</span>
+                                        </div>
+                                        <div class="flex justify-between mb-1">
+                                            <span>Processing Fee:</span>
+                                            <span>$0</span>
+                                        </div>
+                                        <hr>
+                                        <div class="flex justify-between" style="font-weight: bold; font-size: 1.2rem;">
+                                            <span>Total Amount:</span>
+                                            <span id="payment-total">$0</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="text-center">
+                                    <button type="button" onclick="window.history.back()" class="btn btn-secondary">
+                                        ← Back
+                                    </button>
+                                    <button type="submit" class="btn btn-success" id="pay-button">
+                                        <span id="pay-text">💳 Pay Now</span>
+                                        <span id="pay-loading" class="loading hidden"></span>
+                                    </button>
+                                </div>
+                            </form>
+                        </div>
+
+                        <!-- Cash Payment Option -->
+                        <div id="cash-payment-form" style="display: none;">
+                            <div class="alert alert-info">
+                                <h4>💵 Cash Payment Selected</h4>
+                                <p>You have chosen to pay cash on arrival. Your booking is confirmed and you can pay when you arrive for your trip.</p>
+                                <p><strong>Please bring exact change or be prepared for change to be provided.</strong></p>
+                            </div>
+
+                            <div class="card" style="background: #f8f9fa; border: 1px solid #dee2e6; margin-bottom: 1rem;">
+                                <div class="card-body">
+                                    <h4>Payment Summary</h4>
+                                    <div class="flex justify-between" style="font-weight: bold; font-size: 1.2rem;">
+                                        <span>Amount to pay on arrival:</span>
+                                        <span id="cash-total">$0</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="text-center">
+                                <button type="button" onclick="window.history.back()" class="btn btn-secondary">
+                                    ← Back
+                                </button>
+                                <button type="button" onclick="confirmCashPayment()" class="btn btn-success">
+                                    ✅ Confirm Cash Payment
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error State -->
+            <div id="error-container" style="display: none;" class="text-center">
+                <h2>Booking Not Found</h2>
+                <p>The requested booking could not be found or payment has already been completed.</p>
+                <a href="/dashboard" class="btn btn-primary">← Back to Dashboard</a>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        let booking = null;
+        let currentUser = null;
+
+        // Initialize payment page
+        async function initializePayment() {
+            if (!requireAuth()) return;
+
+            currentUser = JSON.parse(localStorage.getItem('user'));
+
+            // Get booking ID from URL
+            const pathParts = window.location.pathname.split('/');
+            const bookingId = pathParts[pathParts.length - 1];
+
+            if (!bookingId || isNaN(bookingId)) {
+                showError();
+                return;
+            }
+
+            try {
+                await loadBookingDetails(bookingId);
+            } catch (error) {
+                console.error('Error loading booking:', error);
+                showError();
+            }
+        }
+
+        // Load booking details
+        async function loadBookingDetails(bookingId) {
+            try {
+                const response = await fetch(`/api/bookings/${bookingId}`);
+
+                if (!response.ok) {
+                    throw new Error('Booking not found');
+                }
+
+                booking = await response.json();
+
+                // Check if payment is already completed
+                if (booking.payment_status === 'paid') {
+                    showAlert('Payment already completed for this booking', 'info');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 3000);
+                    return;
+                }
+
+                // Check if user owns this booking
+                if (booking.customer_id !== currentUser.id) {
+                    showError();
+                    return;
+                }
+
+                displayBookingDetails();
+                setupPaymentForm();
+
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('payment-container').style.display = 'block';
+
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        // Display booking details
+        function displayBookingDetails() {
+            const summaryContainer = document.getElementById('booking-summary');
+
+            summaryContainer.innerHTML = `
+                <div class="form-row">
+                    <div>
+                        <h3>${booking.title}</h3>
+                        <p>${booking.description}</p>
+                        
+                        <div class="mb-2">
+                            <strong>📅 Date:</strong> ${formatDate(booking.scheduled_date)}<br>
+                            <strong>⏰ Time:</strong> ${formatTime(booking.departure_time)} - ${formatTime(booking.return_time)}<br>
+                            <strong>📍 Location:</strong> ${booking.departure_location}
+                        </div>
+                        
+                        <div class="mb-2">
+                            <strong>🎫 Booking Reference:</strong> ${booking.booking_reference}<br>
+                            <strong>👥 Passengers:</strong> ${booking.number_of_passengers}<br>
+                            <strong>💰 Total Amount:</strong> $${booking.total_amount}
+                        </div>
+
+                        ${booking.special_requirements ? `
+                            <div class="mb-2">
+                                <strong>📝 Special Requirements:</strong> ${booking.special_requirements}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+
+        // Setup payment form
+        function setupPaymentForm() {
+            document.getElementById('payment-subtotal').textContent = `$${booking.total_amount}`;
+            document.getElementById('payment-total').textContent = `$${booking.total_amount}`;
+            document.getElementById('cash-total').textContent = `$${booking.total_amount}`;
+
+            // Format card number input
+            document.getElementById('card-number').addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\s+/g, '').replace(/[^0-9]/gi, '');
+                let formattedValue = value.match(/.{1,4}/g)?.join(' ') || value;
+                e.target.value = formattedValue;
+            });
+
+            // Format expiry date input
+            document.getElementById('expiry-date').addEventListener('input', function(e) {
+                let value = e.target.value.replace(/\D/g, '');
+                if (value.length >= 2) {
+                    value = value.substring(0, 2) + '/' + value.substring(2, 4);
+                }
+                e.target.value = value;
+            });
+
+            // CVV input (numbers only)
+            document.getElementById('cvv').addEventListener('input', function(e) {
+                e.target.value = e.target.value.replace(/[^0-9]/g, '');
+            });
+        }
+
+        // Toggle payment method
+        function togglePaymentMethod() {
+            const paymentMethod = document.querySelector('input[name="paymentMethod"]:checked').value;
+            const cardForm = document.getElementById('card-payment-form');
+            const cashForm = document.getElementById('cash-payment-form');
+
+            if (paymentMethod === 'card') {
+                cardForm.style.display = 'block';
+                cashForm.style.display = 'none';
+            } else {
+                cardForm.style.display = 'none';
+                cashForm.style.display = 'block';
+            }
+        }
+
+        // Handle card payment form submission
+        document.getElementById('payment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const payButton = document.getElementById('pay-button');
+            const payText = document.getElementById('pay-text');
+            const payLoading = document.getElementById('pay-loading');
+
+            // Show loading
+            payButton.disabled = true;
+            payText.classList.add('hidden');
+            payLoading.classList.remove('hidden');
+
+            try {
+                // Simulate payment processing delay
+                await new Promise(resolve => setTimeout(resolve, 2000));
+
+                const response = await fetch(`/api/bookings/${booking.id}/payment`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        paymentMethod: 'online',
+                        cardDetails: {
+                            cardNumber: document.getElementById('card-number').value,
+                            expiryDate: document.getElementById('expiry-date').value,
+                            cvv: document.getElementById('cvv').value,
+                            cardholderName: document.getElementById('cardholder-name').value,
+                            billingAddress: document.getElementById('billing-address').value
+                        }
+                    })
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('Payment successful! Redirecting to dashboard...', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 2000);
+                } else {
+                    showAlert(result.error || 'Payment failed', 'error');
+                }
+
+            } catch (error) {
+                console.error('Payment error:', error);
+                showAlert('Payment processing failed. Please try again.', 'error');
+            } finally {
+                // Reset loading
+                payButton.disabled = false;
+                payText.classList.remove('hidden');
+                payLoading.classList.add('hidden');
+            }
+        });
+
+        // Confirm cash payment
+        async function confirmCashPayment() {
+            try {
+                showAlert('Confirming cash payment...', 'info');
+
+                // For cash payments, we just update the booking status
+                // The actual payment will be handled on arrival
+                const response = await fetch(`/api/bookings/${booking.id}/confirm`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showAlert('Cash payment confirmed! Your booking is complete. Please pay on arrival.', 'success');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 3000);
+                } else {
+                    showAlert(result.error || 'Failed to confirm cash payment', 'error');
+                }
+
+            } catch (error) {
+                console.error('Cash payment confirmation error:', error);
+                showAlert('Failed to confirm cash payment', 'error');
+            }
+        }
+
+        // Show error state
+        function showError() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error-container').style.display = 'block';
+        }
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthStatus();
+            initializePayment();
+        });
+    </script>
+</body>
+</html>

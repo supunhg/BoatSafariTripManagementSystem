@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Available Trips - Boat Safari</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav-container">
+            <a href="/" class="logo">🚢 Boat Safari</a>
+            <ul class="nav-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/trips" class="active">Trips</a></li>
+                <li id="auth-nav"></li>
+            </ul>
+            <div class="user-info" id="user-info" style="display: none;">
+                <span class="user-name" id="user-name"></span>
+                <a href="/dashboard" class="btn btn-secondary">Dashboard</a>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <h1 class="text-center mb-3">Available Safari Trips</h1>
+            
+            <!-- Filters -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <h3>Filter Trips</h3>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="date-filter">Date</label>
+                            <input type="date" id="date-filter" class="form-control">
+                        </div>
+                        <div class="form-group">
+                            <label for="availability-filter">Availability</label>
+                            <select id="availability-filter" class="form-control">
+                                <option value="">All Trips</option>
+                                <option value="available">Available Only</option>
+                            </select>
+                        </div>
+                        <div class="form-group" style="display: flex; align-items: end;">
+                            <button onclick="applyFilters()" class="btn btn-primary">Apply Filters</button>
+                            <button onclick="clearFilters()" class="btn btn-secondary" style="margin-left: 1rem;">Clear</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading" class="text-center">
+                <div class="loading" style="width: 40px; height: 40px;"></div>
+                <p>Loading trips...</p>
+            </div>
+
+            <!-- Trips Grid -->
+            <div class="trips-grid" id="trips-container" style="display: none;">
+                <!-- Trips will be loaded here -->
+            </div>
+
+            <!-- No Trips Message -->
+            <div id="no-trips" class="text-center" style="display: none;">
+                <h3>No trips found</h3>
+                <p>Try adjusting your filters or check back later for new trips.</p>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        let allTrips = [];
+        
+        // Load all trips
+        async function loadTrips() {
+            try {
+                document.getElementById('loading').style.display = 'block';
+                document.getElementById('trips-container').style.display = 'none';
+                document.getElementById('no-trips').style.display = 'none';
+                
+                const response = await fetch('/api/trips');
+                allTrips = await response.json();
+                
+                displayTrips(allTrips);
+                
+            } catch (error) {
+                console.error('Error loading trips:', error);
+                showAlert('Failed to load trips. Please try again.', 'error');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        // Display trips
+        function displayTrips(trips) {
+            const container = document.getElementById('trips-container');
+            container.innerHTML = '';
+            
+            if (trips.length === 0) {
+                document.getElementById('no-trips').style.display = 'block';
+                return;
+            }
+            
+            document.getElementById('trips-container').style.display = 'grid';
+            
+            trips.forEach(trip => {
+                const tripCard = createTripCard(trip);
+                container.appendChild(tripCard);
+            });
+        }
+        
+        // Create trip card
+        function createTripCard(trip) {
+            const card = document.createElement('div');
+            card.className = 'trip-card';
+            
+            const availableSchedules = trip.schedules?.filter(s => 
+                s.status === 'scheduled' && s.available_seats > 0
+            ) || [];
+            
+            card.innerHTML = `
+                <div class="trip-image">
+                    🚢 ${trip.title}
+                </div>
+                <div class="trip-content">
+                    <h3 class="trip-title">${trip.title}</h3>
+                    <p class="trip-description">${trip.description}</p>
+                    <div class="trip-details">
+                        <span class="trip-price">$${trip.price}</span>
+                        <span class="trip-duration">${trip.duration_hours} hours</span>
+                    </div>
+                    <p class="trip-location">📍 ${trip.departure_location}</p>
+                    <div class="trip-schedules">
+                        <h4>Available Schedules:</h4>
+                        ${availableSchedules.length > 0 ? 
+                            availableSchedules.slice(0, 3).map(schedule => `
+                                <div class="schedule-item" style="margin: 0.5rem 0; padding: 0.5rem; background: #f8f9fa; border-radius: 5px;">
+                                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                                        <div>
+                                            <strong>${formatDate(schedule.scheduled_date)}</strong><br>
+                                            <span>${formatTime(schedule.departure_time)} - ${formatTime(schedule.return_time)}</span>
+                                        </div>
+                                        <div style="text-align: right;">
+                                            <div>🪑 ${schedule.available_seats} seats</div>
+                                            <button onclick="bookTrip(${schedule.id})" class="btn btn-success" style="margin-top: 0.5rem; padding: 0.25rem 0.75rem; font-size: 0.9rem;">
+                                                Book Now
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('') :
+                            '<p style="color: #666; font-style: italic;">No available schedules</p>'
+                        }
+                        ${availableSchedules.length > 3 ? 
+                            `<p style="color: #666; font-size: 0.9rem;">...and ${availableSchedules.length - 3} more</p>` : 
+                            ''
+                        }
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        // Book trip
+        function bookTrip(scheduleId) {
+            const user = JSON.parse(localStorage.getItem('user') || 'null');
+            if (!user) {
+                showAlert('Please login to book a trip', 'warning');
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 2000);
+                return;
+            }
+            
+            window.location.href = `/booking/${scheduleId}`;
+        }
+        
+        // Apply filters
+        function applyFilters() {
+            const dateFilter = document.getElementById('date-filter').value;
+            const availabilityFilter = document.getElementById('availability-filter').value;
+            
+            let filteredTrips = [...allTrips];
+            
+            // Filter by date
+            if (dateFilter) {
+                filteredTrips = filteredTrips.map(trip => ({
+                    ...trip,
+                    schedules: trip.schedules?.filter(schedule => 
+                        schedule.scheduled_date === dateFilter
+                    ) || []
+                })).filter(trip => trip.schedules.length > 0);
+            }
+            
+            // Filter by availability
+            if (availabilityFilter === 'available') {
+                filteredTrips = filteredTrips.map(trip => ({
+                    ...trip,
+                    schedules: trip.schedules?.filter(schedule => 
+                        schedule.status === 'scheduled' && schedule.available_seats > 0
+                    ) || []
+                })).filter(trip => trip.schedules.length > 0);
+            }
+            
+            displayTrips(filteredTrips);
+        }
+        
+        // Clear filters
+        function clearFilters() {
+            document.getElementById('date-filter').value = '';
+            document.getElementById('availability-filter').value = '';
+            displayTrips(allTrips);
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthStatus();
+            loadTrips();
+            
+            // Set minimum date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date-filter').min = today;
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Boat Safari Trip Management System</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav-container">
+            <a href="/" class="logo">🚢 Boat Safari</a>
+            <ul class="nav-menu">
+                <li><a href="/" class="active">Home</a></li>
+                <li><a href="/trips">Trips</a></li>
+                <li id="auth-nav"></li>
+            </ul>
+            <div class="user-info" id="user-info" style="display: none;">
+                <span class="user-name" id="user-name"></span>
+                <a href="/dashboard" class="btn btn-secondary">Dashboard</a>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>Discover Amazing Wildlife</h1>
+            <p>Experience unforgettable boat safari adventures with professional guides and comfortable vessels</p>
+            <a href="/trips" class="btn btn-primary">Explore Trips</a>
+            <a href="/register" class="btn btn-success" id="get-started-btn">Get Started</a>
+        </div>
+    </section>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <!-- Features Section -->
+        <section class="features">
+            <div class="container">
+                <h2 class="text-center mb-3">Why Choose Our Safari Tours?</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">🦁</div>
+                        <div class="stat-label">Wildlife Experience</div>
+                        <p class="mt-2">Expert guides with extensive knowledge of local wildlife and ecosystems</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">🚤</div>
+                        <div class="stat-label">Modern Boats</div>
+                        <p class="mt-2">Safe, comfortable vessels equipped with all necessary safety equipment</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">📱</div>
+                        <div class="stat-label">Easy Booking</div>
+                        <p class="mt-2">Simple online booking system with flexible payment options</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">🌅</div>
+                        <div class="stat-label">Perfect Timing</div>
+                        <p class="mt-2">Multiple departure times to catch wildlife at their most active periods</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Featured Trips Section -->
+        <section class="featured-trips">
+            <div class="container">
+                <h2 class="text-center mb-3">Featured Trips</h2>
+                <div class="trips-grid" id="featured-trips">
+                    <!-- Featured trips will be loaded here -->
+                </div>
+                <div class="text-center">
+                    <a href="/trips" class="btn btn-primary">View All Trips</a>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Section -->
+        <section class="how-it-works">
+            <div class="container">
+                <h2 class="text-center mb-3">How It Works</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number">1</div>
+                        <div class="stat-label">Choose Your Trip</div>
+                        <p class="mt-2">Browse our available safari trips and select your preferred date and time</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">2</div>
+                        <div class="stat-label">Book & Pay</div>
+                        <p class="mt-2">Complete your booking with secure online payment or pay cash on arrival</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">3</div>
+                        <div class="stat-label">Get Confirmation</div>
+                        <p class="mt-2">Receive booking confirmation with all trip details and meeting instructions</p>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number">4</div>
+                        <div class="stat-label">Enjoy Safari</div>
+                        <p class="mt-2">Meet your guide and enjoy an unforgettable wildlife experience</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer style="background: #2c3e50; color: white; text-align: center; padding: 2rem 0; margin-top: 4rem;">
+        <div class="container">
+            <p>&copy; 2024 Boat Safari Trip Management System. All rights reserved.</p>
+            <p>Experience wildlife like never before!</p>
+        </div>
+    </footer>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        // Load featured trips
+        async function loadFeaturedTrips() {
+            try {
+                const response = await fetch('/api/trips?available=true');
+                const trips = await response.json();
+                
+                const featuredTripsContainer = document.getElementById('featured-trips');
+                featuredTripsContainer.innerHTML = '';
+                
+                // Show only first 3 trips as featured
+                const featuredTrips = trips.slice(0, 3);
+                
+                if (featuredTrips.length === 0) {
+                    featuredTripsContainer.innerHTML = '<p class="text-center">No trips available at the moment. Please check back later!</p>';
+                    return;
+                }
+                
+                featuredTrips.forEach(trip => {
+                    const tripCard = createTripCard(trip);
+                    featuredTripsContainer.appendChild(tripCard);
+                });
+                
+            } catch (error) {
+                console.error('Error loading featured trips:', error);
+                document.getElementById('featured-trips').innerHTML = '<p class="text-center">Unable to load trips. Please try again later.</p>';
+            }
+        }
+        
+        function createTripCard(trip) {
+            const card = document.createElement('div');
+            card.className = 'trip-card';
+            
+            const hasSchedules = trip.schedules && trip.schedules.length > 0;
+            const nextSchedule = hasSchedules ? trip.schedules[0] : null;
+            
+            card.innerHTML = `
+                <div class="trip-image">
+                    🚢 ${trip.title}
+                </div>
+                <div class="trip-content">
+                    <h3 class="trip-title">${trip.title}</h3>
+                    <p class="trip-description">${trip.description}</p>
+                    <div class="trip-details">
+                        <span class="trip-price">$${trip.price}</span>
+                        <span class="trip-duration">${trip.duration_hours} hours</span>
+                    </div>
+                    <p class="trip-location">📍 ${trip.departure_location}</p>
+                    ${nextSchedule ? `
+                        <p class="trip-schedule">📅 Next: ${formatDate(nextSchedule.scheduled_date)} at ${formatTime(nextSchedule.departure_time)}</p>
+                        <p class="trip-availability">🪑 ${nextSchedule.available_seats} seats available</p>
+                    ` : `
+                        <p class="trip-schedule">📅 No upcoming schedules</p>
+                    `}
+                    <div class="text-center mt-2">
+                        <a href="/trips" class="btn btn-primary">View Details</a>
+                    </div>
+                </div>
+            `;
+            
+            return card;
+        }
+        
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        }
+        
+        function formatTime(timeString) {
+            const [hours, minutes] = timeString.split(':');
+            const date = new Date();
+            date.setHours(parseInt(hours), parseInt(minutes), 0);
+            return date.toLocaleTimeString('en-US', { 
+                hour: 'numeric', 
+                minute: '2-digit',
+                hour12: true 
+            });
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthStatus();
+            loadFeaturedTrips();
+        });
+    </script>
+</body>
+</html>

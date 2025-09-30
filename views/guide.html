@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guide Panel - Boat Safari</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav-container">
+            <a href="/" class="logo">🚢 Boat Safari</a>
+            <ul class="nav-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/trips">Trips</a></li>
+                <li><a href="/guide" class="active">My Trips</a></li>
+                <li><a href="/dashboard">Dashboard</a></li>
+            </ul>
+            <div class="user-info" id="user-info">
+                <span class="user-name" id="user-name"></span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <h1>Guide Panel</h1>
+
+            <!-- Loading State -->
+            <div id="loading" class="text-center">
+                <div class="loading" style="width: 40px; height: 40px;"></div>
+                <p>Loading your assignments...</p>
+            </div>
+
+            <!-- Guide Content -->
+            <div id="guide-content" style="display: none;">
+                
+                <!-- Today's Trips -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <div class="flex justify-between align-center">
+                            <h3>🏴‍☠️ Today's Assignments</h3>
+                            <span class="status-badge status-info" id="today-count">0</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="todays-trips">
+                            <!-- Today's trips will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Trips -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3>📅 Upcoming Assignments (Next 7 Days)</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="upcoming-trips">
+                            <!-- Upcoming trips will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Trip History -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="flex justify-between align-center">
+                            <h3>📖 Trip History</h3>
+                            <div class="flex gap-2">
+                                <input type="month" id="month-filter" class="form-control" style="width: auto;">
+                                <button onclick="loadTripHistory()" class="btn btn-primary">Filter</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Trip</th>
+                                        <th>Date & Time</th>
+                                        <th>Boat</th>
+                                        <th>Passengers</th>
+                                        <th>Status</th>
+                                        <th>Rating</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="history-table">
+                                    <!-- Trip history will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Trip Details Modal -->
+    <div id="trip-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Trip Details</h3>
+            <div id="trip-details">
+                <!-- Trip details will be shown here -->
+            </div>
+            <div class="flex gap-2">
+                <button type="button" onclick="closeTripModal()" class="btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Check-in Modal -->
+    <div id="checkin-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Passenger Check-in</h3>
+            <form id="checkin-form">
+                <input type="hidden" id="checkin-schedule-id">
+                <div id="passenger-list">
+                    <!-- Passenger list will be shown here -->
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <span id="checkin-text">Update Check-in Status</span>
+                        <span id="checkin-loading" class="loading hidden"></span>
+                    </button>
+                    <button type="button" onclick="closeCheckinModal()" class="btn btn-secondary">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="alert-container"></div>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        let currentUser = null;
+
+        // Initialize guide panel
+        async function initializeGuide() {
+            if (!requireAuth()) return;
+            if (!requireRole(['guide'])) return;
+
+            currentUser = JSON.parse(localStorage.getItem('user'));
+            
+            try {
+                await loadGuideTrips();
+            } catch (error) {
+                console.error('Error loading guide panel:', error);
+                showAlert('Failed to load guide data', 'error');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('guide-content').style.display = 'block';
+            }
+        }
+
+        // Load guide trips
+        async function loadGuideTrips() {
+            try {
+                const response = await fetch('/api/guide/trips');
+                const data = await response.json();
+                
+                loadTodaysTrips(data.todaysTrips || []);
+                loadUpcomingTrips(data.upcomingTrips || []);
+                loadTripHistory(data.history || []);
+                
+            } catch (error) {
+                console.error('Error loading trips:', error);
+                showAlert('Failed to load trip data', 'error');
+            }
+        }
+
+        // Load today's trips
+        function loadTodaysTrips(trips) {
+            const container = document.getElementById('todays-trips');
+            const countBadge = document.getElementById('today-count');
+            
+            countBadge.textContent = trips.length;
+            
+            if (trips.length === 0) {
+                container.innerHTML = '<p class="text-center">🏖️ No trips assigned for today. Enjoy your day off!</p>';
+                return;
+            }
+            
+            container.innerHTML = trips.map(trip => `
+                <div class="card mb-2" style="border-left: 4px solid #27ae60;">
+                    <div class="card-body">
+                        <div class="flex justify-between align-center">
+                            <div>
+                                <h4>${trip.title}</h4>
+                                <p>⏰ ${formatTime(trip.departure_time)} - ${formatTime(trip.return_time)}</p>
+                                <p>📍 ${trip.departure_location}</p>
+                                <p>🚤 Boat: ${trip.boat_name}</p>
+                                <p>👥 ${trip.confirmed_passengers || 0} passengers booked</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="mb-2">
+                                    <span class="status-badge status-${trip.status}">${trip.status}</span>
+                                </div>
+                                <div class="flex flex-col gap-1">
+                                    <button onclick="viewTripDetails(${trip.id})" class="btn btn-info btn-sm">
+                                        📋 Details
+                                    </button>
+                                    ${trip.status === 'scheduled' ? `
+                                        <button onclick="openCheckinModal(${trip.id})" class="btn btn-success btn-sm">
+                                            ✅ Check-in
+                                        </button>
+                                    ` : ''}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load upcoming trips
+        function loadUpcomingTrips(trips) {
+            const container = document.getElementById('upcoming-trips');
+            
+            if (trips.length === 0) {
+                container.innerHTML = '<p class="text-center">No upcoming trips assigned in the next 7 days.</p>';
+                return;
+            }
+            
+            container.innerHTML = trips.map(trip => `
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <div class="flex justify-between align-center">
+                            <div>
+                                <h4>${trip.title}</h4>
+                                <p>📅 ${formatDate(trip.scheduled_date)} at ${formatTime(trip.departure_time)}</p>
+                                <p>📍 ${trip.departure_location}</p>
+                                <p>🚤 Boat: ${trip.boat_name}</p>
+                                <p>👥 ${trip.confirmed_passengers || 0} passengers expected</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="mb-2">
+                                    <span class="status-badge status-${trip.status}">${trip.status}</span>
+                                </div>
+                                <button onclick="viewTripDetails(${trip.id})" class="btn btn-info btn-sm">
+                                    📋 Details
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load trip history
+        async function loadTripHistory(history = null) {
+            try {
+                let trips = history;
+                
+                if (!trips) {
+                    const monthFilter = document.getElementById('month-filter').value;
+                    let url = '/api/guide/history';
+                    if (monthFilter) {
+                        url += `?month=${monthFilter}`;
+                    }
+                    
+                    const response = await fetch(url);
+                    trips = await response.json();
+                }
+                
+                const historyTable = document.getElementById('history-table');
+                historyTable.innerHTML = '';
+                
+                if (trips.length === 0) {
+                    historyTable.innerHTML = '<tr><td colspan="7" class="text-center">No trip history found</td></tr>';
+                    return;
+                }
+                
+                trips.forEach(trip => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${trip.title}</td>
+                        <td>
+                            ${formatDate(trip.scheduled_date)}<br>
+                            ${formatTime(trip.departure_time)} - ${formatTime(trip.return_time)}
+                        </td>
+                        <td>${trip.boat_name}</td>
+                        <td>👥 ${trip.confirmed_passengers || 0}</td>
+                        <td><span class="status-badge status-${trip.status}">${trip.status}</span></td>
+                        <td>
+                            ${trip.rating ? `⭐ ${trip.rating}/5` : '❌ Not rated'}
+                        </td>
+                        <td>
+                            <button onclick="viewTripDetails(${trip.id})" class="btn btn-info btn-sm">
+                                📋 View
+                            </button>
+                        </td>
+                    `;
+                    historyTable.appendChild(row);
+                });
+                
+            } catch (error) {
+                console.error('Error loading trip history:', error);
+                showAlert('Failed to load trip history', 'error');
+            }
+        }
+
+        // View trip details
+        async function viewTripDetails(scheduleId) {
+            try {
+                const response = await fetch(`/api/guide/trip/${scheduleId}`);
+                const trip = await response.json();
+                
+                document.getElementById('trip-details').innerHTML = `
+                    <div class="alert alert-info mb-3">
+                        <h4>${trip.title}</h4>
+                        <p><strong>Description:</strong> ${trip.description}</p>
+                        <p><strong>Date:</strong> ${formatDate(trip.scheduled_date)}</p>
+                        <p><strong>Time:</strong> ${formatTime(trip.departure_time)} - ${formatTime(trip.return_time)}</p>
+                        <p><strong>Location:</strong> ${trip.departure_location}</p>
+                        <p><strong>Boat:</strong> ${trip.boat_name}</p>
+                        <p><strong>Status:</strong> <span class="status-badge status-${trip.status}">${trip.status}</span></p>
+                    </div>
+                    
+                    <h5>👥 Passenger List (${trip.passengers.length})</h5>
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Phone</th>
+                                    <th>Passengers</th>
+                                    <th>Check-in Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${trip.passengers.map(passenger => `
+                                    <tr>
+                                        <td>${passenger.first_name} ${passenger.last_name}</td>
+                                        <td>${passenger.phone}</td>
+                                        <td>${passenger.passenger_count}</td>
+                                        <td>
+                                            <span class="status-badge ${passenger.checked_in ? 'status-confirmed' : 'status-pending'}">
+                                                ${passenger.checked_in ? '✅ Checked In' : '⏳ Pending'}
+                                            </span>
+                                        </td>
+                                    </tr>
+                                `).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+                
+                document.getElementById('trip-modal').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Error loading trip details:', error);
+                showAlert('Failed to load trip details', 'error');
+            }
+        }
+
+        // Open check-in modal
+        async function openCheckinModal(scheduleId) {
+            try {
+                const response = await fetch(`/api/guide/trip/${scheduleId}`);
+                const trip = await response.json();
+                
+                document.getElementById('checkin-schedule-id').value = scheduleId;
+                document.getElementById('passenger-list').innerHTML = `
+                    <h5>👥 Passenger Check-in (${trip.passengers.length} bookings)</h5>
+                    ${trip.passengers.map(passenger => `
+                        <div class="card mb-2">
+                            <div class="card-body">
+                                <div class="flex justify-between align-center">
+                                    <div>
+                                        <strong>${passenger.first_name} ${passenger.last_name}</strong><br>
+                                        📞 ${passenger.phone}<br>
+                                        👥 ${passenger.passenger_count} passengers
+                                    </div>
+                                    <div>
+                                        <label class="checkbox-container">
+                                            <input type="checkbox" name="checkin-${passenger.booking_id}" 
+                                                   ${passenger.checked_in ? 'checked' : ''}>
+                                            <span class="checkmark"></span>
+                                            ${passenger.checked_in ? 'Checked In' : 'Check In'}
+                                        </label>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `).join('')}
+                `;
+                
+                document.getElementById('checkin-modal').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Error loading passengers:', error);
+                showAlert('Failed to load passenger list', 'error');
+            }
+        }
+
+        // Close modals
+        function closeTripModal() {
+            document.getElementById('trip-modal').style.display = 'none';
+        }
+
+        function closeCheckinModal() {
+            document.getElementById('checkin-modal').style.display = 'none';
+        }
+
+        // Handle check-in form submission
+        document.getElementById('checkin-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const checkinText = document.getElementById('checkin-text');
+            const checkinLoading = document.getElementById('checkin-loading');
+            
+            // Show loading
+            submitBtn.disabled = true;
+            checkinText.classList.add('hidden');
+            checkinLoading.classList.remove('hidden');
+            
+            const scheduleId = document.getElementById('checkin-schedule-id').value;
+            const checkboxes = document.querySelectorAll('input[name^="checkin-"]');
+            
+            const checkins = [];
+            checkboxes.forEach(checkbox => {
+                const bookingId = checkbox.name.replace('checkin-', '');
+                checkins.push({
+                    bookingId: parseInt(bookingId),
+                    checkedIn: checkbox.checked
+                });
+            });
+            
+            try {
+                const response = await fetch(`/api/guide/checkin/${scheduleId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ checkins })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert('Check-in status updated successfully!', 'success');
+                    closeCheckinModal();
+                    // Reload trips
+                    await loadGuideTrips();
+                } else {
+                    showAlert(result.error || 'Check-in update failed', 'error');
+                }
+            } catch (error) {
+                console.error('Check-in error:', error);
+                showAlert('Check-in update failed', 'error');
+            } finally {
+                // Reset loading
+                submitBtn.disabled = false;
+                checkinText.classList.remove('hidden');
+                checkinLoading.classList.add('hidden');
+            }
+        });
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthStatus();
+            initializeGuide();
+            
+            // Set month filter to current month
+            const currentMonth = new Date().toISOString().slice(0, 7);
+            document.getElementById('month-filter').value = currentMonth;
+        });
+
+        // Close modals when clicking outside
+        ['trip-modal', 'checkin-modal'].forEach(modalId => {
+            document.getElementById(modalId).addEventListener('click', (e) => {
+                if (e.target === document.getElementById(modalId)) {
+                    if (modalId === 'trip-modal') closeTripModal();
+                    if (modalId === 'checkin-modal') closeCheckinModal();
+                }
+            });
+        });
+
+        // Add custom styles
+        const style = document.createElement('style');
+        style.textContent = `
+            .modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            }
+            .modal-content {
+                background: white;
+                padding: 2rem;
+                border-radius: 10px;
+                min-width: 600px;
+                max-width: 90vw;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+            .btn-sm {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.8rem;
+            }
+            .flex-col {
+                flex-direction: column;
+            }
+            .checkbox-container {
+                display: flex;
+                align-items: center;
+                gap: 0.5rem;
+                cursor: pointer;
+            }
+            .checkbox-container input[type="checkbox"] {
+                width: 18px;
+                height: 18px;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

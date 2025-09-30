@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Boat Safari</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav-container">
+            <a href="/" class="logo">🚢 Boat Safari</a>
+            <ul class="nav-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/trips">Trips</a></li>
+                <li><a href="/dashboard" class="active">Dashboard</a></li>
+            </ul>
+            <div class="user-info" id="user-info">
+                <span class="user-name" id="user-name"></span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <div class="flex justify-between align-center mb-3">
+                <h1>Dashboard</h1>
+                <div id="role-based-nav">
+                    <!-- Role-based navigation will be inserted here -->
+                </div>
+            </div>
+
+            <!-- Loading State -->
+            <div id="loading" class="text-center">
+                <div class="loading" style="width: 40px; height: 40px;"></div>
+                <p>Loading dashboard...</p>
+            </div>
+
+            <!-- Dashboard Content -->
+            <div id="dashboard-content" style="display: none;">
+                
+                <!-- Customer Dashboard -->
+                <div id="customer-dashboard" style="display: none;">
+                    <h2>My Bookings</h2>
+                    
+                    <div class="card">
+                        <div class="card-header">Recent Bookings</div>
+                        <div class="card-body">
+                            <div id="customer-bookings">
+                                <!-- Customer bookings will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">Notifications</div>
+                        <div class="card-body">
+                            <div id="customer-notifications">
+                                <!-- Notifications will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Dashboard -->
+                <div id="admin-dashboard" style="display: none;">
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-number" id="total-trips">0</div>
+                            <div class="stat-label">Total Trips</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="total-bookings">0</div>
+                            <div class="stat-label">Total Bookings</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number" id="total-revenue">$0</div>
+                            <div class="stat-label">Total Revenue</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-number">👥</div>
+                            <div class="stat-label">System Overview</div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">Recent Bookings</div>
+                        <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table" id="admin-bookings-table">
+                                    <thead>
+                                        <tr>
+                                            <th>Booking Ref</th>
+                                            <th>Customer</th>
+                                            <th>Trip</th>
+                                            <th>Date</th>
+                                            <th>Status</th>
+                                            <th>Amount</th>
+                                            <th>Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="admin-bookings">
+                                        <!-- Admin bookings will be loaded here -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Operations Dashboard -->
+                <div id="operations-dashboard" style="display: none;">
+                    <h2>Operations Management</h2>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header">Pending Assignments</div>
+                        <div class="card-body">
+                            <div id="pending-assignments">
+                                <!-- Pending assignments will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">Upcoming Trips (Next 7 Days)</div>
+                        <div class="card-body">
+                            <div id="upcoming-trips">
+                                <!-- Upcoming trips will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Guide Dashboard -->
+                <div id="guide-dashboard" style="display: none;">
+                    <h2>My Assignments</h2>
+                    
+                    <div class="card mb-3">
+                        <div class="card-header">Upcoming Assignments</div>
+                        <div class="card-body">
+                            <div id="guide-assignments">
+                                <!-- Guide assignments will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card">
+                        <div class="card-header">Notifications</div>
+                        <div class="card-body">
+                            <div id="guide-notifications">
+                                <!-- Notifications will be loaded here -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Assignment Modal (for Operations) -->
+    <div id="assignment-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
+        <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 10px; min-width: 400px;">
+            <h3>Assign Boat and Guide</h3>
+            <form id="assignment-form">
+                <input type="hidden" id="assignment-schedule-id">
+                <div class="form-group">
+                    <label for="assignment-boat">Boat</label>
+                    <select id="assignment-boat" class="form-control">
+                        <option value="">Select Boat</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="assignment-guide">Guide</label>
+                    <select id="assignment-guide" class="form-control">
+                        <option value="">Select Guide</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="btn btn-primary">Assign</button>
+                    <button type="button" onclick="closeAssignmentModal()" class="btn btn-secondary">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        let currentUser = null;
+        
+        // Initialize dashboard
+        async function initializeDashboard() {
+            if (!requireAuth()) return;
+            
+            currentUser = JSON.parse(localStorage.getItem('user'));
+            updateRoleBasedNav();
+            
+            try {
+                await loadDashboardData();
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+                showAlert('Failed to load dashboard data', 'error');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('dashboard-content').style.display = 'block';
+            }
+        }
+        
+        // Update role-based navigation
+        function updateRoleBasedNav() {
+            const nav = document.getElementById('role-based-nav');
+            const role = currentUser.role;
+            
+            if (role === 'admin') {
+                nav.innerHTML = '<a href="/admin" class="btn btn-primary">Admin Panel</a>';
+            } else if (role === 'operations') {
+                nav.innerHTML = '<a href="/operations" class="btn btn-primary">Operations Panel</a>';
+            } else if (role === 'guide') {
+                nav.innerHTML = '<a href="/guide" class="btn btn-primary">Guide Panel</a>';
+            }
+        }
+        
+        // Load dashboard data based on user role
+        async function loadDashboardData() {
+            const response = await fetch('/api/dashboard');
+            const data = await response.json();
+            
+            const role = currentUser.role;
+            
+            // Show appropriate dashboard
+            document.getElementById(`${role}-dashboard`).style.display = 'block';
+            
+            if (role === 'customer') {
+                loadCustomerDashboard(data);
+            } else if (role === 'admin') {
+                loadAdminDashboard(data);
+            } else if (role === 'operations') {
+                loadOperationsDashboard(data);
+            } else if (role === 'guide') {
+                loadGuideDashboard(data);
+            }
+        }
+        
+        // Load customer dashboard
+        function loadCustomerDashboard(data) {
+            const bookingsContainer = document.getElementById('customer-bookings');
+            const notificationsContainer = document.getElementById('customer-notifications');
+            
+            // Load bookings
+            if (data.recentBookings && data.recentBookings.length > 0) {
+                bookingsContainer.innerHTML = data.recentBookings.map(booking => `
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <div class="flex justify-between align-center">
+                                <div>
+                                    <h4>${booking.title}</h4>
+                                    <p>📅 ${formatDate(booking.scheduled_date)} at ${formatTime(booking.departure_time)}</p>
+                                    <p>🎫 Booking: ${booking.booking_reference}</p>
+                                </div>
+                                <div>
+                                    <span class="status-badge status-${booking.booking_status}">${booking.booking_status}</span>
+                                    <div class="mt-1">$${booking.total_amount}</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                bookingsContainer.innerHTML = '<p>No bookings yet. <a href="/trips">Book your first trip!</a></p>';
+            }
+            
+            // Load notifications
+            loadNotifications(notificationsContainer, data.notifications);
+        }
+        
+        // Load admin dashboard
+        function loadAdminDashboard(data) {
+            document.getElementById('total-trips').textContent = data.totalTrips || 0;
+            document.getElementById('total-bookings').textContent = data.totalBookings || 0;
+            document.getElementById('total-revenue').textContent = formatCurrency(data.totalRevenue || 0);
+            
+            const bookingsBody = document.getElementById('admin-bookings');
+            
+            if (data.recentBookings && data.recentBookings.length > 0) {
+                bookingsBody.innerHTML = data.recentBookings.map(booking => `
+                    <tr>
+                        <td>${booking.booking_reference}</td>
+                        <td>${booking.first_name} ${booking.last_name}</td>
+                        <td>${booking.title}</td>
+                        <td>${formatDate(booking.scheduled_date)}</td>
+                        <td><span class="status-badge status-${booking.booking_status}">${booking.booking_status}</span></td>
+                        <td>$${booking.total_amount}</td>
+                        <td>
+                            <button onclick="viewBooking(${booking.id})" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">View</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                bookingsBody.innerHTML = '<tr><td colspan="7" class="text-center">No bookings found</td></tr>';
+            }
+        }
+        
+        // Load operations dashboard
+        async function loadOperationsDashboard(data) {
+            const pendingContainer = document.getElementById('pending-assignments');
+            const upcomingContainer = document.getElementById('upcoming-trips');
+            
+            // Load boats and guides for assignment modal
+            await loadBoatsAndGuides();
+            
+            // Load pending assignments
+            if (data.pendingAssignments && data.pendingAssignments.length > 0) {
+                pendingContainer.innerHTML = data.pendingAssignments.map(assignment => `
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <div class="flex justify-between align-center">
+                                <div>
+                                    <h4>${assignment.title}</h4>
+                                    <p>📅 ${formatDate(assignment.scheduled_date)} at ${formatTime(assignment.departure_time)}</p>
+                                    <p>📍 ${assignment.departure_location}</p>
+                                    <p>👥 ${assignment.booking_count || 0} bookings</p>
+                                </div>
+                                <div>
+                                    <button onclick="openAssignmentModal(${assignment.id})" class="btn btn-warning">Assign</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                pendingContainer.innerHTML = '<p>No pending assignments.</p>';
+            }
+            
+            // Load upcoming trips
+            if (data.upcomingTrips && data.upcomingTrips.length > 0) {
+                upcomingContainer.innerHTML = data.upcomingTrips.map(trip => `
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <div class="flex justify-between align-center">
+                                <div>
+                                    <h4>${trip.title}</h4>
+                                    <p>📅 ${formatDate(trip.scheduled_date)} at ${formatTime(trip.departure_time)}</p>
+                                    <p>🚤 ${trip.boat_name || 'Not assigned'}</p>
+                                    <p>👨‍🦳 ${trip.guide_first_name ? `${trip.guide_first_name} ${trip.guide_last_name}` : 'Not assigned'}</p>
+                                </div>
+                                <div>
+                                    <div>👥 ${trip.booking_count || 0} bookings</div>
+                                    <span class="status-badge status-${trip.status}">${trip.status}</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                upcomingContainer.innerHTML = '<p>No upcoming trips in the next 7 days.</p>';
+            }
+        }
+        
+        // Load guide dashboard
+        function loadGuideDashboard(data) {
+            const assignmentsContainer = document.getElementById('guide-assignments');
+            const notificationsContainer = document.getElementById('guide-notifications');
+            
+            // Load assignments
+            if (data.myAssignments && data.myAssignments.length > 0) {
+                assignmentsContainer.innerHTML = data.myAssignments.map(assignment => `
+                    <div class="card mb-2">
+                        <div class="card-body">
+                            <h4>${assignment.title}</h4>
+                            <p>📅 ${formatDate(assignment.scheduled_date)} at ${formatTime(assignment.departure_time)}</p>
+                            <p>📍 From: ${assignment.departure_location}</p>
+                            <p>📍 To: ${assignment.return_location}</p>
+                            <p>🚤 Boat: ${assignment.boat_name || 'TBD'}</p>
+                            <p>👥 Passengers: ${assignment.passenger_count || 0}</p>
+                            <span class="status-badge status-${assignment.status}">${assignment.status}</span>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                assignmentsContainer.innerHTML = '<p>No upcoming assignments.</p>';
+            }
+            
+            // Load notifications
+            loadNotifications(notificationsContainer, data.notifications);
+        }
+        
+        // Load notifications
+        function loadNotifications(container, notifications) {
+            if (notifications && notifications.length > 0) {
+                container.innerHTML = notifications.map(notification => `
+                    <div class="notification ${notification.is_read ? 'read' : 'unread'}" onclick="markNotificationRead(${notification.id})">
+                        <div class="notification-title">${notification.title}</div>
+                        <div class="notification-message">${notification.message}</div>
+                        <div class="notification-time">${formatDate(notification.created_at)}</div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = '<p>No notifications.</p>';
+            }
+        }
+        
+        // Load boats and guides for assignment
+        async function loadBoatsAndGuides() {
+            try {
+                const [boatsResponse, guidesResponse] = await Promise.all([
+                    fetch('/api/dashboard/boats'),
+                    fetch('/api/users/guides')
+                ]);
+                
+                const boats = await boatsResponse.json();
+                const guides = await guidesResponse.json();
+                
+                const boatSelect = document.getElementById('assignment-boat');
+                const guideSelect = document.getElementById('assignment-guide');
+                
+                boatSelect.innerHTML = '<option value="">Select Boat</option>' +
+                    boats.map(boat => `<option value="${boat.id}">${boat.name} (Capacity: ${boat.capacity})</option>`).join('');
+                
+                guideSelect.innerHTML = '<option value="">Select Guide</option>' +
+                    guides.map(guide => `<option value="${guide.id}">${guide.first_name} ${guide.last_name}</option>`).join('');
+                
+            } catch (error) {
+                console.error('Error loading boats and guides:', error);
+            }
+        }
+        
+        // Open assignment modal
+        function openAssignmentModal(scheduleId) {
+            document.getElementById('assignment-schedule-id').value = scheduleId;
+            document.getElementById('assignment-modal').style.display = 'block';
+        }
+        
+        // Close assignment modal
+        function closeAssignmentModal() {
+            document.getElementById('assignment-modal').style.display = 'none';
+            document.getElementById('assignment-form').reset();
+        }
+        
+        // Handle assignment form submission
+        document.getElementById('assignment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const scheduleId = document.getElementById('assignment-schedule-id').value;
+            const boatId = document.getElementById('assignment-boat').value;
+            const guideId = document.getElementById('assignment-guide').value;
+            
+            try {
+                const response = await fetch(`/api/dashboard/assign/${scheduleId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ boatId, guideId })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert('Assignment updated successfully', 'success');
+                    closeAssignmentModal();
+                    // Reload dashboard data
+                    await loadDashboardData();
+                } else {
+                    showAlert(result.error || 'Assignment failed', 'error');
+                }
+            } catch (error) {
+                console.error('Assignment error:', error);
+                showAlert('Assignment failed', 'error');
+            }
+        });
+        
+        // Mark notification as read
+        async function markNotificationRead(notificationId) {
+            try {
+                await fetch(`/api/dashboard/notifications/${notificationId}/read`, {
+                    method: 'PUT'
+                });
+                // Reload dashboard to update notification status
+                await loadDashboardData();
+            } catch (error) {
+                console.error('Error marking notification as read:', error);
+            }
+        }
+        
+        // View booking details
+        function viewBooking(bookingId) {
+            // Implementation for viewing booking details
+            // Could open a modal or navigate to a detailed view
+            console.log('View booking:', bookingId);
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthStatus();
+            initializeDashboard();
+        });
+        
+        // Close modal when clicking outside
+        document.getElementById('assignment-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('assignment-modal')) {
+                closeAssignmentModal();
+            }
+        });
+    </script>
+</body>
+</html>

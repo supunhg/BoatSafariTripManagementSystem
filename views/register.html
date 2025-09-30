@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Boat Safari</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav-container">
+            <a href="/" class="logo">🚢 Boat Safari</a>
+            <ul class="nav-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/trips">Trips</a></li>
+                <li><a href="/register" class="active">Register</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h1>Sign Up</h1>
+                <p>Create your account to start booking amazing safari trips!</p>
+            </div>
+
+            <div id="alert-container"></div>
+
+            <form id="register-form">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="firstName">First Name</label>
+                        <input type="text" id="firstName" name="firstName" class="form-control" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="lastName">Last Name</label>
+                        <input type="text" id="lastName" name="lastName" class="form-control" required>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" name="username" class="form-control" required minlength="3">
+                    <small style="color: #666;">At least 3 characters</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="email">Email Address</label>
+                    <input type="email" id="email" name="email" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="phone">Phone Number (Optional)</label>
+                    <input type="tel" id="phone" name="phone" class="form-control">
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-control" required minlength="6">
+                    <small style="color: #666;">At least 6 characters</small>
+                </div>
+
+                <div class="form-group">
+                    <label for="confirmPassword">Confirm Password</label>
+                    <input type="password" id="confirmPassword" name="confirmPassword" class="form-control" required>
+                </div>
+
+                <button type="submit" class="btn btn-success" style="width: 100%;">
+                    <span id="register-text">Create Account</span>
+                    <span id="register-loading" class="loading hidden"></span>
+                </button>
+            </form>
+
+            <div class="auth-links">
+                <p>Already have an account? <a href="/login">Login here</a></p>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        document.getElementById('register-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const registerText = document.getElementById('register-text');
+            const registerLoading = document.getElementById('register-loading');
+            
+            const formData = new FormData(e.target);
+            const data = {
+                firstName: formData.get('firstName'),
+                lastName: formData.get('lastName'),
+                username: formData.get('username'),
+                email: formData.get('email'),
+                phone: formData.get('phone'),
+                password: formData.get('password')
+            };
+            
+            // Client-side validation
+            if (data.password !== formData.get('confirmPassword')) {
+                showAlert('Passwords do not match', 'error');
+                return;
+            }
+            
+            if (data.password.length < 6) {
+                showAlert('Password must be at least 6 characters long', 'error');
+                return;
+            }
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            registerText.classList.add('hidden');
+            registerLoading.classList.remove('hidden');
+            
+            try {
+                const response = await fetch('/api/auth/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert('Registration successful! Redirecting to dashboard...', 'success');
+                    
+                    // Store user info in localStorage
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    
+                    // Redirect to dashboard
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 1000);
+                } else {
+                    if (result.errors && Array.isArray(result.errors)) {
+                        const errorMessages = result.errors.map(err => err.msg).join(', ');
+                        showAlert(errorMessages, 'error');
+                    } else {
+                        showAlert(result.error || 'Registration failed', 'error');
+                    }
+                }
+            } catch (error) {
+                console.error('Registration error:', error);
+                showAlert('Network error. Please try again.', 'error');
+            } finally {
+                // Reset loading state
+                submitBtn.disabled = false;
+                registerText.classList.remove('hidden');
+                registerLoading.classList.add('hidden');
+            }
+        });
+        
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alert-container');
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+            
+            alertContainer.innerHTML = `
+                <div class="alert ${alertClass}">
+                    ${message}
+                </div>
+            `;
+            
+            // Auto-hide alerts after 5 seconds
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
+        
+        // Check if user is already logged in
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthStatus();
+            const user = JSON.parse(localStorage.getItem('user') || 'null');
+            if (user) {
+                window.location.href = '/dashboard';
+            }
+        });
+    </script>
+</body>
+</html>

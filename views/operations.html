@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Operations Panel - Boat Safari</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav-container">
+            <a href="/" class="logo">🚢 Boat Safari</a>
+            <ul class="nav-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/trips">Trips</a></li>
+                <li><a href="/operations" class="active">Operations</a></li>
+                <li><a href="/dashboard">Dashboard</a></li>
+            </ul>
+            <div class="user-info" id="user-info">
+                <span class="user-name" id="user-name"></span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            <h1>Operations Management</h1>
+
+            <!-- Loading State -->
+            <div id="loading" class="text-center">
+                <div class="loading" style="width: 40px; height: 40px;"></div>
+                <p>Loading operations panel...</p>
+            </div>
+
+            <!-- Operations Content -->
+            <div id="operations-content" style="display: none;">
+                
+                <!-- Pending Assignments -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <div class="flex justify-between align-center">
+                            <h3>⚠️ Pending Assignments</h3>
+                            <span class="status-badge status-warning" id="pending-count">0</span>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div id="pending-assignments">
+                            <!-- Pending assignments will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Upcoming Trips -->
+                <div class="card mb-3">
+                    <div class="card-header">
+                        <h3>📅 Upcoming Trips (Next 7 Days)</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="upcoming-trips">
+                            <!-- Upcoming trips will be loaded here -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- All Schedules Management -->
+                <div class="card">
+                    <div class="card-header">
+                        <div class="flex justify-between align-center">
+                            <h3>Schedule Management</h3>
+                            <div class="flex gap-2">
+                                <input type="date" id="date-filter" class="form-control" style="width: auto;">
+                                <button onclick="loadSchedules()" class="btn btn-primary">Filter</button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead>
+                                    <tr>
+                                        <th>Trip</th>
+                                        <th>Date & Time</th>
+                                        <th>Boat</th>
+                                        <th>Guide</th>
+                                        <th>Bookings</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="schedules-table">
+                                    <!-- Schedules will be loaded here -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Assignment Modal -->
+    <div id="assignment-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Assign Resources</h3>
+            <form id="assignment-form">
+                <input type="hidden" id="assignment-schedule-id">
+                <div id="assignment-details" class="mb-3">
+                    <!-- Assignment details will be shown here -->
+                </div>
+                <div class="form-group">
+                    <label for="assignment-boat">Boat</label>
+                    <select id="assignment-boat" class="form-control">
+                        <option value="">Select Boat</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="assignment-guide">Guide</label>
+                    <select id="assignment-guide" class="form-control">
+                        <option value="">Select Guide</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <span id="assign-text">Assign Resources</span>
+                        <span id="assign-loading" class="loading hidden"></span>
+                    </button>
+                    <button type="button" onclick="closeAssignmentModal()" class="btn btn-secondary">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="alert-container"></div>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        let currentUser = null;
+        let boats = [];
+        let guides = [];
+
+        // Initialize operations panel
+        async function initializeOperations() {
+            if (!requireAuth()) return;
+            if (!requireRole(['admin', 'operations'])) return;
+
+            currentUser = JSON.parse(localStorage.getItem('user'));
+            
+            try {
+                await Promise.all([
+                    loadDashboardData(),
+                    loadBoatsAndGuides(),
+                    loadSchedules()
+                ]);
+            } catch (error) {
+                console.error('Error loading operations panel:', error);
+                showAlert('Failed to load operations data', 'error');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('operations-content').style.display = 'block';
+            }
+        }
+
+        // Load dashboard data
+        async function loadDashboardData() {
+            const response = await fetch('/api/dashboard');
+            const data = await response.json();
+            
+            loadPendingAssignments(data.pendingAssignments || []);
+            loadUpcomingTrips(data.upcomingTrips || []);
+        }
+
+        // Load pending assignments
+        function loadPendingAssignments(assignments) {
+            const container = document.getElementById('pending-assignments');
+            const countBadge = document.getElementById('pending-count');
+            
+            countBadge.textContent = assignments.length;
+            
+            if (assignments.length === 0) {
+                container.innerHTML = '<p class="text-center">✅ No pending assignments. All trips are properly staffed!</p>';
+                return;
+            }
+            
+            container.innerHTML = assignments.map(assignment => `
+                <div class="card mb-2" style="border-left: 4px solid #f39c12;">
+                    <div class="card-body">
+                        <div class="flex justify-between align-center">
+                            <div>
+                                <h4>${assignment.title}</h4>
+                                <p>📅 ${formatDate(assignment.scheduled_date)} at ${formatTime(assignment.departure_time)}</p>
+                                <p>📍 ${assignment.departure_location}</p>
+                                <p>👥 ${assignment.booking_count || 0} bookings confirmed</p>
+                            </div>
+                            <div class="text-center">
+                                <button onclick="openAssignmentModal(${assignment.id}, '${assignment.title}', '${assignment.scheduled_date}', '${assignment.departure_time}')" 
+                                        class="btn btn-warning">
+                                    🔧 Assign Now
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load upcoming trips
+        function loadUpcomingTrips(trips) {
+            const container = document.getElementById('upcoming-trips');
+            
+            if (trips.length === 0) {
+                container.innerHTML = '<p class="text-center">No upcoming trips in the next 7 days.</p>';
+                return;
+            }
+            
+            container.innerHTML = trips.map(trip => `
+                <div class="card mb-2">
+                    <div class="card-body">
+                        <div class="flex justify-between align-center">
+                            <div>
+                                <h4>${trip.title}</h4>
+                                <p>📅 ${formatDate(trip.scheduled_date)} at ${formatTime(trip.departure_time)}</p>
+                                <p>🚤 Boat: ${trip.boat_name || '❌ Not assigned'}</p>
+                                <p>👨‍🦳 Guide: ${trip.guide_first_name ? `${trip.guide_first_name} ${trip.guide_last_name}` : '❌ Not assigned'}</p>
+                            </div>
+                            <div class="text-center">
+                                <div class="mb-1">👥 ${trip.booking_count || 0} bookings</div>
+                                <span class="status-badge status-${trip.status}">${trip.status}</span>
+                                ${(!trip.boat_name || !trip.guide_first_name) ? `
+                                    <br><button onclick="openAssignmentModal(${trip.id}, '${trip.title}', '${trip.scheduled_date}', '${trip.departure_time}')" 
+                                            class="btn btn-warning btn-sm mt-1">
+                                        🔧 Assign
+                                    </button>
+                                ` : ''}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Load boats and guides
+        async function loadBoatsAndGuides() {
+            try {
+                const [boatsResponse, guidesResponse] = await Promise.all([
+                    fetch('/api/dashboard/boats'),
+                    fetch('/api/users/guides')
+                ]);
+                
+                boats = await boatsResponse.json();
+                guides = await guidesResponse.json();
+                
+                populateAssignmentSelects();
+                
+            } catch (error) {
+                console.error('Error loading boats and guides:', error);
+                showAlert('Failed to load boats and guides', 'error');
+            }
+        }
+
+        // Populate assignment selects
+        function populateAssignmentSelects() {
+            const boatSelect = document.getElementById('assignment-boat');
+            const guideSelect = document.getElementById('assignment-guide');
+            
+            boatSelect.innerHTML = '<option value="">Select Boat</option>' +
+                boats.map(boat => `<option value="${boat.id}">${boat.name} (Capacity: ${boat.capacity})</option>`).join('');
+            
+            guideSelect.innerHTML = '<option value="">Select Guide</option>' +
+                guides.map(guide => `<option value="${guide.id}">${guide.first_name} ${guide.last_name}</option>`).join('');
+        }
+
+        // Load schedules
+        async function loadSchedules() {
+            try {
+                const dateFilter = document.getElementById('date-filter').value;
+                let url = '/api/dashboard/schedules';
+                if (dateFilter) {
+                    url += `?date=${dateFilter}`;
+                }
+                
+                const response = await fetch(url);
+                const schedules = await response.json();
+                
+                const schedulesTable = document.getElementById('schedules-table');
+                schedulesTable.innerHTML = '';
+                
+                if (schedules.length === 0) {
+                    schedulesTable.innerHTML = '<tr><td colspan="7" class="text-center">No schedules found</td></tr>';
+                    return;
+                }
+                
+                schedules.forEach(schedule => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${schedule.title}</td>
+                        <td>
+                            ${formatDate(schedule.scheduled_date)}<br>
+                            ${formatTime(schedule.departure_time)} - ${formatTime(schedule.return_time)}
+                        </td>
+                        <td>${schedule.boat_name || '❌ Not assigned'}</td>
+                        <td>${schedule.guide_first_name ? `${schedule.guide_first_name} ${schedule.guide_last_name}` : '❌ Not assigned'}</td>
+                        <td>
+                            👥 ${schedule.booking_count || 0} bookings<br>
+                            🪑 ${schedule.confirmed_passengers || 0} passengers
+                        </td>
+                        <td><span class="status-badge status-${schedule.status}">${schedule.status}</span></td>
+                        <td>
+                            <button onclick="openAssignmentModal(${schedule.id}, '${schedule.title}', '${schedule.scheduled_date}', '${schedule.departure_time}')" 
+                                    class="btn btn-warning btn-sm">
+                                🔧 Assign
+                            </button>
+                        </td>
+                    `;
+                    schedulesTable.appendChild(row);
+                });
+                
+            } catch (error) {
+                console.error('Error loading schedules:', error);
+                showAlert('Failed to load schedules', 'error');
+            }
+        }
+
+        // Open assignment modal
+        function openAssignmentModal(scheduleId, title, date, time) {
+            document.getElementById('assignment-schedule-id').value = scheduleId;
+            document.getElementById('assignment-details').innerHTML = `
+                <div class="alert alert-info">
+                    <h4>${title}</h4>
+                    <p>📅 ${formatDate(date)} at ${formatTime(time)}</p>
+                </div>
+            `;
+            document.getElementById('assignment-modal').style.display = 'flex';
+        }
+
+        // Close assignment modal
+        function closeAssignmentModal() {
+            document.getElementById('assignment-modal').style.display = 'none';
+            document.getElementById('assignment-form').reset();
+        }
+
+        // Handle assignment form submission
+        document.getElementById('assignment-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const assignText = document.getElementById('assign-text');
+            const assignLoading = document.getElementById('assign-loading');
+            
+            // Show loading
+            submitBtn.disabled = true;
+            assignText.classList.add('hidden');
+            assignLoading.classList.remove('hidden');
+            
+            const scheduleId = document.getElementById('assignment-schedule-id').value;
+            const boatId = document.getElementById('assignment-boat').value;
+            const guideId = document.getElementById('assignment-guide').value;
+            
+            if (!boatId && !guideId) {
+                showAlert('Please select at least a boat or guide to assign', 'warning');
+                // Reset loading
+                submitBtn.disabled = false;
+                assignText.classList.remove('hidden');
+                assignLoading.classList.add('hidden');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/dashboard/assign/${scheduleId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ boatId, guideId })
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert('Resources assigned successfully!', 'success');
+                    closeAssignmentModal();
+                    // Reload data
+                    await Promise.all([
+                        loadDashboardData(),
+                        loadSchedules()
+                    ]);
+                } else {
+                    showAlert(result.error || 'Assignment failed', 'error');
+                }
+            } catch (error) {
+                console.error('Assignment error:', error);
+                showAlert('Assignment failed', 'error');
+            } finally {
+                // Reset loading
+                submitBtn.disabled = false;
+                assignText.classList.remove('hidden');
+                assignLoading.classList.add('hidden');
+            }
+        });
+
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthStatus();
+            initializeOperations();
+            
+            // Set date filter to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('date-filter').value = today;
+        });
+
+        // Close modal when clicking outside
+        document.getElementById('assignment-modal').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('assignment-modal')) {
+                closeAssignmentModal();
+            }
+        });
+
+        // Add modal styling
+        const style = document.createElement('style');
+        style.textContent = `
+            .modal {
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(0,0,0,0.5);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 1000;
+            }
+            .modal-content {
+                background: white;
+                padding: 2rem;
+                border-radius: 10px;
+                min-width: 500px;
+                max-width: 90vw;
+                max-height: 90vh;
+                overflow-y: auto;
+            }
+            .btn-sm {
+                padding: 0.25rem 0.5rem;
+                font-size: 0.8rem;
+            }
+        `;
+        document.head.appendChild(style);
+    </script>
+</body>
+</html>

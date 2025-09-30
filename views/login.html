@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - Boat Safari</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav-container">
+            <a href="/" class="logo">🚢 Boat Safari</a>
+            <ul class="nav-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/trips">Trips</a></li>
+                <li><a href="/login" class="active">Login</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="auth-container">
+            <div class="auth-header">
+                <h1>Login</h1>
+                <p>Welcome back! Please login to your account.</p>
+            </div>
+
+            <div id="alert-container"></div>
+
+            <form id="login-form">
+                <div class="form-group">
+                    <label for="username">Username or Email</label>
+                    <input type="text" id="username" name="username" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" name="password" class="form-control" required>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <span id="login-text">Login</span>
+                    <span id="login-loading" class="loading hidden"></span>
+                </button>
+            </form>
+
+            <div class="auth-links">
+                <p>Don't have an account? <a href="/register">Sign up here</a></p>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const loginText = document.getElementById('login-text');
+            const loginLoading = document.getElementById('login-loading');
+            
+            // Show loading state
+            submitBtn.disabled = true;
+            loginText.classList.add('hidden');
+            loginLoading.classList.remove('hidden');
+            
+            const formData = new FormData(e.target);
+            const data = {
+                username: formData.get('username'),
+                password: formData.get('password')
+            };
+            
+            try {
+                const response = await fetch('/api/auth/login', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(data)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert('Login successful! Redirecting...', 'success');
+                    
+                    // Store user info in localStorage
+                    localStorage.setItem('user', JSON.stringify(result.user));
+                    
+                    // Redirect based on user role
+                    setTimeout(() => {
+                        if (result.user.role === 'admin') {
+                            window.location.href = '/admin';
+                        } else if (result.user.role === 'operations') {
+                            window.location.href = '/operations';
+                        } else if (result.user.role === 'guide') {
+                            window.location.href = '/guide';
+                        } else {
+                            window.location.href = '/dashboard';
+                        }
+                    }, 1000);
+                } else {
+                    showAlert(result.error || 'Login failed', 'error');
+                }
+            } catch (error) {
+                console.error('Login error:', error);
+                showAlert('Network error. Please try again.', 'error');
+            } finally {
+                // Reset loading state
+                submitBtn.disabled = false;
+                loginText.classList.remove('hidden');
+                loginLoading.classList.add('hidden');
+            }
+        });
+        
+        function showAlert(message, type) {
+            const alertContainer = document.getElementById('alert-container');
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-error';
+            
+            alertContainer.innerHTML = `
+                <div class="alert ${alertClass}">
+                    ${message}
+                </div>
+            `;
+            
+            // Auto-hide alerts after 5 seconds
+            setTimeout(() => {
+                alertContainer.innerHTML = '';
+            }, 5000);
+        }
+        
+        // Check if user is already logged in
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthStatus();
+            const user = JSON.parse(localStorage.getItem('user') || 'null');
+            if (user) {
+                window.location.href = '/dashboard';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Trip - Boat Safari</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <nav class="nav-container">
+            <a href="/" class="logo">🚢 Boat Safari</a>
+            <ul class="nav-menu">
+                <li><a href="/">Home</a></li>
+                <li><a href="/trips">Trips</a></li>
+                <li><a href="/dashboard">Dashboard</a></li>
+            </ul>
+            <div class="user-info" id="user-info">
+                <span class="user-name" id="user-name"></span>
+                <button class="logout-btn" onclick="logout()">Logout</button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-content">
+        <div class="container">
+            
+            <!-- Loading State -->
+            <div id="loading" class="text-center">
+                <div class="loading" style="width: 40px; height: 40px;"></div>
+                <p>Loading trip details...</p>
+            </div>
+
+            <!-- Booking Form -->
+            <div id="booking-container" style="display: none;">
+                <h1>Book Your Safari Trip</h1>
+
+                <div id="alert-container"></div>
+
+                <!-- Trip Details -->
+                <div class="card mb-3">
+                    <div class="card-header">Trip Details</div>
+                    <div class="card-body" id="trip-details">
+                        <!-- Trip details will be loaded here -->
+                    </div>
+                </div>
+
+                <!-- Booking Form -->
+                <form id="booking-form" class="card">
+                    <div class="card-header">Booking Information</div>
+                    <div class="card-body">
+                        
+                        <!-- Number of Passengers -->
+                        <div class="form-group">
+                            <label for="numberOfPassengers">Number of Passengers</label>
+                            <select id="numberOfPassengers" name="numberOfPassengers" class="form-control" required>
+                                <option value="">Select number of passengers</option>
+                                <option value="1">1 Passenger</option>
+                                <option value="2">2 Passengers</option>
+                                <option value="3">3 Passengers</option>
+                                <option value="4">4 Passengers</option>
+                                <option value="5">5 Passengers</option>
+                                <option value="6">6 Passengers</option>
+                                <option value="7">7 Passengers</option>
+                                <option value="8">8 Passengers</option>
+                            </select>
+                        </div>
+
+                        <!-- Passenger Details -->
+                        <div id="passenger-details" style="display: none;">
+                            <h3>Passenger Details</h3>
+                            <div id="passengers-container">
+                                <!-- Passenger forms will be added dynamically -->
+                            </div>
+                        </div>
+
+                        <!-- Payment Method -->
+                        <div class="form-group">
+                            <label>Payment Method</label>
+                            <div>
+                                <label style="display: flex; align-items: center; margin-bottom: 0.5rem;">
+                                    <input type="radio" name="paymentMethod" value="online" checked style="margin-right: 0.5rem;">
+                                    💳 Pay Online (Credit/Debit Card)
+                                </label>
+                                <label style="display: flex; align-items: center;">
+                                    <input type="radio" name="paymentMethod" value="cash" style="margin-right: 0.5rem;">
+                                    💵 Pay Cash on Arrival
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Special Requirements -->
+                        <div class="form-group">
+                            <label for="specialRequirements">Special Requirements (Optional)</label>
+                            <textarea id="specialRequirements" name="specialRequirements" class="form-control" rows="3" 
+                                placeholder="Any special dietary requirements, accessibility needs, or other requests..."></textarea>
+                        </div>
+
+                        <!-- Booking Summary -->
+                        <div class="card" style="background: #f8f9fa; border: 1px solid #dee2e6;">
+                            <div class="card-body">
+                                <h4>Booking Summary</h4>
+                                <div class="flex justify-between mb-1">
+                                    <span>Price per person:</span>
+                                    <span id="price-per-person">$0</span>
+                                </div>
+                                <div class="flex justify-between mb-1">
+                                    <span>Number of passengers:</span>
+                                    <span id="summary-passengers">0</span>
+                                </div>
+                                <hr>
+                                <div class="flex justify-between" style="font-weight: bold; font-size: 1.2rem;">
+                                    <span>Total Amount:</span>
+                                    <span id="total-amount">$0</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Submit Buttons -->
+                        <div class="text-center mt-3">
+                            <button type="button" onclick="window.history.back()" class="btn btn-secondary">
+                                ← Back to Trips
+                            </button>
+                            <button type="submit" class="btn btn-success" id="submit-booking">
+                                <span id="submit-text">Complete Booking</span>
+                                <span id="submit-loading" class="loading hidden"></span>
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Error State -->
+            <div id="error-container" style="display: none;" class="text-center">
+                <h2>Trip Not Found</h2>
+                <p>The requested trip schedule could not be found or is no longer available.</p>
+                <a href="/trips" class="btn btn-primary">← Back to Trips</a>
+            </div>
+        </div>
+    </main>
+
+    <script src="/js/auth.js"></script>
+    <script>
+        let tripSchedule = null;
+        let currentUser = null;
+        
+        // Initialize booking page
+        async function initializeBooking() {
+            if (!requireAuth()) return;
+            
+            currentUser = JSON.parse(localStorage.getItem('user'));
+            
+            // Get schedule ID from URL
+            const pathParts = window.location.pathname.split('/');
+            const scheduleId = pathParts[pathParts.length - 1];
+            
+            if (!scheduleId || isNaN(scheduleId)) {
+                showError();
+                return;
+            }
+            
+            try {
+                await loadTripSchedule(scheduleId);
+            } catch (error) {
+                console.error('Error loading trip schedule:', error);
+                showError();
+            }
+        }
+        
+        // Load trip schedule details
+        async function loadTripSchedule(scheduleId) {
+            try {
+                const response = await fetch(`/api/trips/schedule/${scheduleId}`);
+                
+                if (!response.ok) {
+                    throw new Error('Trip schedule not found');
+                }
+                
+                tripSchedule = await response.json();
+                
+                // Check if trip is still available
+                if (tripSchedule.status !== 'scheduled' || tripSchedule.available_seats <= 0) {
+                    showAlert('This trip is no longer available for booking.', 'warning');
+                    setTimeout(() => {
+                        window.location.href = '/trips';
+                    }, 3000);
+                    return;
+                }
+                
+                displayTripDetails();
+                setupForm();
+                
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('booking-container').style.display = 'block';
+                
+            } catch (error) {
+                throw error;
+            }
+        }
+        
+        // Display trip details
+        function displayTripDetails() {
+            const detailsContainer = document.getElementById('trip-details');
+            
+            detailsContainer.innerHTML = `
+                <div class="form-row">
+                    <div class="trip-info">
+                        <h3>${tripSchedule.title}</h3>
+                        <p>${tripSchedule.description}</p>
+                        
+                        <div class="form-row">
+                            <div>
+                                <strong>📅 Date:</strong> ${formatDate(tripSchedule.scheduled_date)}
+                            </div>
+                            <div>
+                                <strong>⏰ Time:</strong> ${formatTime(tripSchedule.departure_time)} - ${formatTime(tripSchedule.return_time)}
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div>
+                                <strong>📍 Departure:</strong> ${tripSchedule.departure_location}
+                            </div>
+                            <div>
+                                <strong>📍 Return:</strong> ${tripSchedule.return_location}
+                            </div>
+                        </div>
+                        
+                        <div class="form-row">
+                            <div>
+                                <strong>💰 Price:</strong> $${tripSchedule.price} per person
+                            </div>
+                            <div>
+                                <strong>🪑 Available Seats:</strong> ${tripSchedule.available_seats}
+                            </div>
+                        </div>
+                        
+                        ${tripSchedule.boat_name ? `
+                            <div class="form-row">
+                                <div>
+                                    <strong>🚤 Boat:</strong> ${tripSchedule.boat_name}
+                                </div>
+                                ${tripSchedule.guide_name ? `
+                                    <div>
+                                        <strong>👨‍🦳 Guide:</strong> ${tripSchedule.guide_name}
+                                    </div>
+                                ` : ''}
+                            </div>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        }
+        
+        // Setup form
+        function setupForm() {
+            document.getElementById('price-per-person').textContent = `$${tripSchedule.price}`;
+            
+            // Limit passenger selection based on available seats
+            const passengerSelect = document.getElementById('numberOfPassengers');
+            const maxPassengers = Math.min(8, tripSchedule.available_seats);
+            
+            // Clear existing options except the first one
+            passengerSelect.innerHTML = '<option value="">Select number of passengers</option>';
+            
+            for (let i = 1; i <= maxPassengers; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = `${i} Passenger${i > 1 ? 's' : ''}`;
+                passengerSelect.appendChild(option);
+            }
+            
+            // Add event listeners
+            passengerSelect.addEventListener('change', handlePassengerCountChange);
+        }
+        
+        // Handle passenger count change
+        function handlePassengerCountChange() {
+            const count = parseInt(document.getElementById('numberOfPassengers').value) || 0;
+            const passengerDetails = document.getElementById('passenger-details');
+            const passengersContainer = document.getElementById('passengers-container');
+            
+            if (count > 0) {
+                passengerDetails.style.display = 'block';
+                
+                // Generate passenger forms
+                passengersContainer.innerHTML = '';
+                for (let i = 1; i <= count; i++) {
+                    const passengerForm = createPassengerForm(i);
+                    passengersContainer.appendChild(passengerForm);
+                }
+            } else {
+                passengerDetails.style.display = 'none';
+            }
+            
+            // Update summary
+            updateBookingSummary();
+        }
+        
+        // Create passenger form
+        function createPassengerForm(passengerNumber) {
+            const div = document.createElement('div');
+            div.className = 'card mb-2';
+            div.innerHTML = `
+                <div class="card-header">Passenger ${passengerNumber}</div>
+                <div class="card-body">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="passenger-${passengerNumber}-firstName">First Name</label>
+                            <input type="text" id="passenger-${passengerNumber}-firstName" name="passenger-${passengerNumber}-firstName" 
+                                class="form-control" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="passenger-${passengerNumber}-lastName">Last Name</label>
+                            <input type="text" id="passenger-${passengerNumber}-lastName" name="passenger-${passengerNumber}-lastName" 
+                                class="form-control" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="passenger-${passengerNumber}-age">Age (Optional)</label>
+                            <input type="number" id="passenger-${passengerNumber}-age" name="passenger-${passengerNumber}-age" 
+                                class="form-control" min="0" max="120">
+                        </div>
+                        <div class="form-group">
+                            <label for="passenger-${passengerNumber}-emergency">Emergency Contact (Optional)</label>
+                            <input type="tel" id="passenger-${passengerNumber}-emergency" name="passenger-${passengerNumber}-emergency" 
+                                class="form-control" placeholder="Phone number">
+                        </div>
+                    </div>
+                </div>
+            `;
+            return div;
+        }
+        
+        // Update booking summary
+        function updateBookingSummary() {
+            const count = parseInt(document.getElementById('numberOfPassengers').value) || 0;
+            const pricePerPerson = tripSchedule ? tripSchedule.price : 0;
+            const total = count * pricePerPerson;
+            
+            document.getElementById('summary-passengers').textContent = count;
+            document.getElementById('total-amount').textContent = formatCurrency(total);
+        }
+        
+        // Handle form submission
+        document.getElementById('booking-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const submitBtn = document.getElementById('submit-booking');
+            const submitText = document.getElementById('submit-text');
+            const submitLoading = document.getElementById('submit-loading');
+            
+            // Show loading
+            submitBtn.disabled = true;
+            submitText.classList.add('hidden');
+            submitLoading.classList.remove('hidden');
+            
+            try {
+                const formData = new FormData(e.target);
+                const numberOfPassengers = parseInt(formData.get('numberOfPassengers'));
+                
+                if (!numberOfPassengers) {
+                    showAlert('Please select the number of passengers', 'error');
+                    return;
+                }
+                
+                // Collect passenger data
+                const passengers = [];
+                for (let i = 1; i <= numberOfPassengers; i++) {
+                    const firstName = formData.get(`passenger-${i}-firstName`);
+                    const lastName = formData.get(`passenger-${i}-lastName`);
+                    
+                    if (!firstName || !lastName) {
+                        showAlert(`Please fill in all required passenger details for Passenger ${i}`, 'error');
+                        return;
+                    }
+                    
+                    passengers.push({
+                        firstName: firstName,
+                        lastName: lastName,
+                        age: formData.get(`passenger-${i}-age`) || null,
+                        emergencyContact: formData.get(`passenger-${i}-emergency`) || null
+                    });
+                }
+                
+                const bookingData = {
+                    tripScheduleId: tripSchedule.id,
+                    numberOfPassengers: numberOfPassengers,
+                    passengers: passengers,
+                    paymentMethod: formData.get('paymentMethod'),
+                    specialRequirements: formData.get('specialRequirements')
+                };
+                
+                const response = await fetch('/api/bookings', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(bookingData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert('Booking created successfully! Redirecting to payment...', 'success');
+                    
+                    // Redirect based on payment method
+                    setTimeout(() => {
+                        if (result.paymentMethod === 'online') {
+                            // Redirect to payment page (dummy implementation)
+                            window.location.href = `/payment/${result.bookingId}`;
+                        } else {
+                            // Redirect to dashboard for cash payments
+                            window.location.href = '/dashboard';
+                        }
+                    }, 2000);
+                } else {
+                    if (result.errors && Array.isArray(result.errors)) {
+                        const errorMessages = result.errors.map(err => err.msg).join(', ');
+                        showAlert(errorMessages, 'error');
+                    } else {
+                        showAlert(result.error || 'Booking failed', 'error');
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Booking error:', error);
+                showAlert('Booking failed. Please try again.', 'error');
+            } finally {
+                // Reset loading
+                submitBtn.disabled = false;
+                submitText.classList.remove('hidden');
+                submitLoading.classList.add('hidden');
+            }
+        });
+        
+        // Show error state
+        function showError() {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error-container').style.display = 'block';
+        }
+        
+        // Initialize page
+        document.addEventListener('DOMContentLoaded', () => {
+            checkAuthStatus();
+            initializeBooking();
+        });
+    </script>
+</body>
+</html>
