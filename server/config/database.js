@@ -11,10 +11,8 @@ const dbConfig = {
     queueLimit: 0
 };
 
-// Create connection pool
 const pool = mysql.createPool(dbConfig);
 
-// Test database connection
 async function testConnection() {
     try {
         const connection = await pool.getConnection();
@@ -27,7 +25,6 @@ async function testConnection() {
     }
 }
 
-// Execute query helper
 async function executeQuery(query, params = []) {
     try {
         const [results] = await pool.execute(query, params);

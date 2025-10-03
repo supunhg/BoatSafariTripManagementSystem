@@ -1,14 +1,9 @@
--- Boat Safari Trip Management System Database Schema
-
--- Setup
 USE mysql;
 DROP DATABASE IF EXISTS boat_safari_db;
 
--- Create Database
 CREATE DATABASE IF NOT EXISTS boat_safari_db;
 USE boat_safari_db;
 
--- Users Table
 CREATE TABLE users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
@@ -23,7 +18,6 @@ CREATE TABLE users (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Boats Table
 CREATE TABLE boats (
     id INT AUTO_INCREMENT PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
@@ -34,7 +28,6 @@ CREATE TABLE boats (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
 
--- Trips Table
 CREATE TABLE trips (
     id INT AUTO_INCREMENT PRIMARY KEY,
     title VARCHAR(200) NOT NULL,
@@ -51,7 +44,6 @@ CREATE TABLE trips (
     FOREIGN KEY (created_by) REFERENCES users(id)
 );
 
--- Trip Schedules Table
 CREATE TABLE trip_schedules (
     id INT AUTO_INCREMENT PRIMARY KEY,
     trip_id INT NOT NULL,
@@ -69,7 +61,6 @@ CREATE TABLE trip_schedules (
     FOREIGN KEY (guide_id) REFERENCES users(id)
 );
 
--- Bookings Table
 CREATE TABLE bookings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     customer_id INT NOT NULL,
@@ -87,7 +78,6 @@ CREATE TABLE bookings (
     FOREIGN KEY (trip_schedule_id) REFERENCES trip_schedules(id)
 );
 
--- Passengers Table
 CREATE TABLE passengers (
     id INT AUTO_INCREMENT PRIMARY KEY,
     booking_id INT NOT NULL,
@@ -99,7 +89,6 @@ CREATE TABLE passengers (
     FOREIGN KEY (booking_id) REFERENCES bookings(id) ON DELETE CASCADE
 );
 
--- Payments Table
 CREATE TABLE payments (
     id INT AUTO_INCREMENT PRIMARY KEY,
     booking_id INT NOT NULL,
@@ -113,7 +102,6 @@ CREATE TABLE payments (
     FOREIGN KEY (booking_id) REFERENCES bookings(id)
 );
 
--- Notifications Table
 CREATE TABLE notifications (
     id INT AUTO_INCREMENT PRIMARY KEY,
     user_id INT NOT NULL,
@@ -125,37 +113,28 @@ CREATE TABLE notifications (
     FOREIGN KEY (user_id) REFERENCES users(id)
 );
 
--- Insert Sample Data
-
--- Insert sample boats
 INSERT INTO boats (name, capacity, description) VALUES
 ('Safari Explorer I', 12, 'Comfortable boat with excellent wildlife viewing capabilities'),
 ('Safari Explorer II', 15, 'Larger boat perfect for group tours with safety equipment'),
 ('Safari Adventure', 8, 'Intimate boat for smaller groups with experienced captain');
 
--- -- Insert sample admin user (password: password)
 INSERT INTO users (username, email, password_hash, first_name, last_name, role) VALUES
 ('admin', 'admin@boatsafari.com', '$2a$12$5dgXcA52aCMhGw8Qe8T/sOZbwkRXeW2FlokKI9RBVo2BoAxM3Bgda', 'System', 'Administrator', 'admin');
 
--- -- Insert sample operations staff (password: password)
 INSERT INTO users (username, email, password_hash, first_name, last_name, role) VALUES
 ('operations', 'ops@boatsafari.com', '$2a$12$5dgXcA52aCMhGw8Qe8T/sOZbwkRXeW2FlokKI9RBVo2BoAxM3Bgda', 'Operations', 'Manager', 'operations');
 
--- -- Insert sample guide (password: password)
 INSERT INTO users (username, email, password_hash, first_name, last_name, role) VALUES
 ('guide1', 'guide1@boatsafari.com', '$2a$12$5dgXcA52aCMhGw8Qe8T/sOZbwkRXeW2FlokKI9RBVo2BoAxM3Bgda', 'John', 'Safari', 'guide');
 
--- -- Insert sample customer (password: password)
 INSERT INTO users (username, email, password_hash, first_name, last_name, role, phone) VALUES
 ('customer1', 'customer@example.com', '$2a$12$5dgXcA52aCMhGw8Qe8T/sOZbwkRXeW2FlokKI9RBVo2BoAxM3Bgda', 'Jane', 'Doe', 'customer', '+1234567890');
 
--- Insert sample trips
 INSERT INTO trips (title, description, price, duration_hours, max_capacity, departure_location, return_location, created_by) VALUES
 ('Morning Wildlife Safari', 'Experience the beauty of wildlife in their natural habitat during the peaceful morning hours. Perfect for photography and bird watching.', 75.00, 3, 12, 'Marina Bay Dock A', 'Marina Bay Dock A', 1),
 ('Sunset Safari Adventure', 'Enjoy a magical sunset while observing wildlife. Includes refreshments and professional guide commentary.', 95.00, 4, 15, 'Harbor Point Dock', 'Harbor Point Dock', 1),
 ('Full Day Safari Experience', 'Complete safari experience with lunch included. Visit multiple wildlife spots and enjoy a comprehensive tour.', 150.00, 8, 12, 'Main Pier', 'Main Pier', 1);
 
--- Insert sample trip schedules for the next few days
 INSERT INTO trip_schedules (trip_id, scheduled_date, departure_time, return_time, available_seats, boat_id, guide_id) VALUES
 (1, CURDATE() + INTERVAL 1 DAY, '08:00:00', '11:00:00', 12, 1, 3),
 (2, CURDATE() + INTERVAL 1 DAY, '17:00:00', '21:00:00', 15, 2, 3),
@@ -163,7 +142,6 @@ INSERT INTO trip_schedules (trip_id, scheduled_date, departure_time, return_time
 (1, CURDATE() + INTERVAL 3 DAY, '08:00:00', '11:00:00', 12, 3, 3),
 (2, CURDATE() + INTERVAL 3 DAY, '17:00:00', '21:00:00', 15, 2, 3);
 
--- Create indexes for better performance
 CREATE INDEX idx_users_email ON users(email);
 CREATE INDEX idx_users_username ON users(username);
 CREATE INDEX idx_bookings_customer ON bookings(customer_id);

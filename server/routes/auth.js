@@ -6,12 +6,10 @@ const { executeQuery } = require('../config/database');
 
 const router = express.Router();
 
-// Generate JWT token
 const generateToken = (userId) => {
     return jwt.sign({ userId }, process.env.JWT_SECRET || 'your-secret-key', { expiresIn: '24h' });
 };
 
-// Register endpoint
 router.post('/register', [
     body('username').isLength({ min: 3 }).withMessage('Username must be at least 3 characters'),
     body('email').isEmail().withMessage('Please provide a valid email'),
@@ -27,7 +25,6 @@ router.post('/register', [
 
         const { username, email, password, firstName, lastName, phone } = req.body;
 
-        // Check if user already exists
         const existingUser = await executeQuery(
             'SELECT id FROM users WHERE username = ? OR email = ?',
             [username, email]
@@ -37,20 +34,16 @@ router.post('/register', [
             return res.status(400).json({ error: 'Username or email already exists' });
         }
 
-        // Hash password
         const saltRounds = 10;
         const passwordHash = await bcrypt.hash(password, saltRounds);
 
-        // Insert new user
         const result = await executeQuery(
             'INSERT INTO users (username, email, password_hash, first_name, last_name, phone, role) VALUES (?, ?, ?, ?, ?, ?, ?)',
             [username, email, passwordHash, firstName, lastName, phone || null, 'customer']
         );
 
-        // Generate token
         const token = generateToken(result.insertId);
 
-        // Set session
         req.session.userId = result.insertId;
         req.session.userRole = 'customer';
 
@@ -73,7 +66,6 @@ router.post('/register', [
     }
 });
 
-// Login endpoint
 router.post('/login', [
     body('username').notEmpty().withMessage('Username is required'),
     body('password').notEmpty().withMessage('Password is required')
@@ -86,7 +78,6 @@ router.post('/login', [
 
         const { username, password } = req.body;
 
-        // Find user by username or email
         const users = await executeQuery(
             'SELECT id, username, email, password_hash, first_name, last_name, role, is_active FROM users WHERE (username = ? OR email = ?) AND is_active = 1',
             [username, username]
@@ -98,16 +89,13 @@ router.post('/login', [
 
         const user = users[0];
 
-        // Verify password
         const isValidPassword = await bcrypt.compare(password, user.password_hash);
         if (!isValidPassword) {
             return res.status(401).json({ error: 'Invalid credentials' });
         }
 
-        // Generate token
         const token = generateToken(user.id);
 
-        // Set session
         req.session.userId = user.id;
         req.session.userRole = user.role;
 
@@ -130,7 +118,6 @@ router.post('/login', [
     }
 });
 
-// Logout endpoint
 router.post('/logout', (req, res) => {
     req.session.destroy((err) => {
         if (err) {
@@ -140,7 +127,6 @@ router.post('/logout', (req, res) => {
     });
 });
 
-// Check authentication status
 router.get('/me', async (req, res) => {
     try {
         console.log('Session check - userId:', req.session.userId, 'role:', req.session.userRole);

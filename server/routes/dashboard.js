@@ -4,7 +4,6 @@ const { requireAuth, authorizeRoles } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get dashboard data based on user role
 router.get('/', requireAuth, async (req, res) => {
     try {
         const userId = req.user.id;
@@ -13,7 +12,6 @@ router.get('/', requireAuth, async (req, res) => {
         let dashboardData = {};
         
         if (userRole === 'customer') {
-            // Customer dashboard data
             const bookings = await executeQuery(`
                 SELECT 
                     b.*, t.title, ts.scheduled_date, ts.departure_time,
@@ -40,7 +38,6 @@ router.get('/', requireAuth, async (req, res) => {
             };
             
         } else if (userRole === 'admin') {
-            // Admin dashboard data
             const totalTrips = await executeQuery('SELECT COUNT(*) as count FROM trips WHERE is_active = 1');
             const totalBookings = await executeQuery('SELECT COUNT(*) as count FROM bookings');
             const totalRevenue = await executeQuery('SELECT SUM(total_amount) as revenue FROM bookings WHERE payment_status = "paid"');
@@ -64,7 +61,6 @@ router.get('/', requireAuth, async (req, res) => {
             };
             
         } else if (userRole === 'operations') {
-            // Operations dashboard data
             const pendingAssignments = await executeQuery(`
                 SELECT 
                     ts.*, t.title, t.departure_location,
@@ -100,7 +96,6 @@ router.get('/', requireAuth, async (req, res) => {
             };
             
         } else if (userRole === 'guide') {
-            // Guide dashboard data
             const myAssignments = await executeQuery(`
                 SELECT 
                     ts.*, t.title, t.description, t.departure_location, t.return_location,
@@ -136,7 +131,6 @@ router.get('/', requireAuth, async (req, res) => {
     }
 });
 
-// Get all boats (for operations)
 router.get('/boats', requireAuth, authorizeRoles('admin', 'operations'), async (req, res) => {
     try {
         const boats = await executeQuery(`
@@ -150,7 +144,6 @@ router.get('/boats', requireAuth, authorizeRoles('admin', 'operations'), async (
     }
 });
 
-// Assign boat and guide to trip schedule
 router.put('/assign/:scheduleId', requireAuth, authorizeRoles('admin', 'operations'), async (req, res) => {
     try {
         const scheduleId = req.params.scheduleId;
@@ -166,7 +159,6 @@ router.put('/assign/:scheduleId', requireAuth, authorizeRoles('admin', 'operatio
             return res.status(404).json({ error: 'Trip schedule not found' });
         }
         
-        // Create notification for guide if assigned
         if (guideId) {
             const schedules = await executeQuery(`
                 SELECT ts.*, t.title, t.departure_location
@@ -192,7 +184,6 @@ router.put('/assign/:scheduleId', requireAuth, authorizeRoles('admin', 'operatio
     }
 });
 
-// Get trip schedules for operations management
 router.get('/schedules', requireAuth, authorizeRoles('admin', 'operations'), async (req, res) => {
     try {
         const { date, status } = req.query;
@@ -239,7 +230,6 @@ router.get('/schedules', requireAuth, authorizeRoles('admin', 'operations'), asy
     }
 });
 
-// Get single trip schedule by ID
 router.get('/schedules/:id', requireAuth, authorizeRoles('admin', 'operations'), async (req, res) => {
     try {
         const scheduleId = req.params.id;
@@ -264,7 +254,6 @@ router.get('/schedules/:id', requireAuth, authorizeRoles('admin', 'operations'),
             return res.status(404).json({ error: 'Trip schedule not found' });
         }
         
-        // Format the date for HTML date input (YYYY-MM-DD)
         const schedule = schedules[0];
         if (schedule.scheduled_date) {
             const date = new Date(schedule.scheduled_date);
@@ -280,7 +269,6 @@ router.get('/schedules/:id', requireAuth, authorizeRoles('admin', 'operations'),
     }
 });
 
-// Get notifications for user
 router.get('/notifications', requireAuth, async (req, res) => {
     try {
         const notifications = await executeQuery(`
@@ -297,7 +285,6 @@ router.get('/notifications', requireAuth, async (req, res) => {
     }
 });
 
-// Mark notification as read
 router.put('/notifications/:id/read', requireAuth, async (req, res) => {
     try {
         const notificationId = req.params.id;
@@ -319,7 +306,6 @@ router.put('/notifications/:id/read', requireAuth, async (req, res) => {
     }
 });
 
-// Get all bookings for admin
 router.get('/bookings', requireAuth, authorizeRoles('admin', 'operations'), async (req, res) => {
     try {
         const bookings = await executeQuery(`
@@ -344,7 +330,6 @@ router.get('/bookings', requireAuth, authorizeRoles('admin', 'operations'), asyn
     }
 });
 
-// Create new trip schedule
 router.post('/schedules', requireAuth, authorizeRoles('admin'), async (req, res) => {
     try {
         const { tripId, scheduledDate, departureTime, returnTime, availableSeats } = req.body;
@@ -364,7 +349,6 @@ router.post('/schedules', requireAuth, authorizeRoles('admin'), async (req, res)
     }
 });
 
-// Update trip schedule
 router.put('/schedules/:id', requireAuth, authorizeRoles('admin'), async (req, res) => {
     try {
         const scheduleId = req.params.id;
@@ -387,12 +371,10 @@ router.put('/schedules/:id', requireAuth, authorizeRoles('admin'), async (req, r
     }
 });
 
-// Delete trip schedule
 router.delete('/schedules/:id', requireAuth, authorizeRoles('admin'), async (req, res) => {
     try {
         const scheduleId = req.params.id;
         
-        // Check if there are any bookings for this schedule
         const bookings = await executeQuery(`
             SELECT COUNT(*) as count FROM bookings 
             WHERE trip_schedule_id = ? AND booking_status != 'cancelled'
@@ -415,13 +397,10 @@ router.delete('/schedules/:id', requireAuth, authorizeRoles('admin'), async (req
     }
 });
 
-// Guide-specific routes
-// Get guide trips
 router.get('/guide/trips', requireAuth, authorizeRoles('guide'), async (req, res) => {
     try {
         const guideId = req.user.id;
         
-        // Today's trips
         const todaysTrips = await executeQuery(`
             SELECT 
                 ts.*, t.title, t.description, t.departure_location, t.return_location,
@@ -437,7 +416,6 @@ router.get('/guide/trips', requireAuth, authorizeRoles('guide'), async (req, res
             ORDER BY ts.departure_time
         `, [guideId]);
         
-        // Upcoming trips (next 7 days)
         const upcomingTrips = await executeQuery(`
             SELECT 
                 ts.*, t.title, t.description, t.departure_location, t.return_location,
@@ -453,7 +431,6 @@ router.get('/guide/trips', requireAuth, authorizeRoles('guide'), async (req, res
             ORDER BY ts.scheduled_date, ts.departure_time
         `, [guideId]);
         
-        // Trip history (last 30 days)
         const history = await executeQuery(`
             SELECT 
                 ts.*, t.title, t.description, t.departure_location, t.return_location,
@@ -481,7 +458,6 @@ router.get('/guide/trips', requireAuth, authorizeRoles('guide'), async (req, res
     }
 });
 
-// Get guide trip history with month filter
 router.get('/guide/history', requireAuth, authorizeRoles('guide'), async (req, res) => {
     try {
         const guideId = req.user.id;
@@ -522,13 +498,11 @@ router.get('/guide/history', requireAuth, authorizeRoles('guide'), async (req, r
     }
 });
 
-// Get trip details with passengers
 router.get('/guide/trip/:scheduleId', requireAuth, authorizeRoles('guide'), async (req, res) => {
     try {
         const scheduleId = req.params.scheduleId;
         const guideId = req.user.id;
         
-        // Get trip details
         const trips = await executeQuery(`
             SELECT 
                 ts.*, t.title, t.description, t.departure_location, t.return_location,
@@ -545,7 +519,6 @@ router.get('/guide/trip/:scheduleId', requireAuth, authorizeRoles('guide'), asyn
         
         const trip = trips[0];
         
-        // Get passengers
         const passengers = await executeQuery(`
             SELECT 
                 b.id as booking_id, b.checked_in,
@@ -566,14 +539,12 @@ router.get('/guide/trip/:scheduleId', requireAuth, authorizeRoles('guide'), asyn
     }
 });
 
-// Update passenger check-in status
 router.put('/guide/checkin/:scheduleId', requireAuth, authorizeRoles('guide'), async (req, res) => {
     try {
         const scheduleId = req.params.scheduleId;
         const guideId = req.user.id;
         const { checkins } = req.body;
         
-        // Verify guide has access to this trip
         const trips = await executeQuery(`
             SELECT id FROM trip_schedules WHERE id = ? AND guide_id = ?
         `, [scheduleId, guideId]);
@@ -582,7 +553,6 @@ router.put('/guide/checkin/:scheduleId', requireAuth, authorizeRoles('guide'), a
             return res.status(404).json({ error: 'Trip not found or access denied' });
         }
         
-        // Update check-in status for each booking
         for (const checkin of checkins) {
             await executeQuery(`
                 UPDATE bookings 

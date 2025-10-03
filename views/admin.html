@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <nav class="nav-container">
             <a href="/" class="logo">🚢 Boat Safari</a>
@@ -24,21 +23,17 @@
         </nav>
     </header>
 
-    <!-- Main Content -->
     <main class="main-content">
         <div class="container">
             <h1>Admin Panel</h1>
 
-            <!-- Loading State -->
             <div id="loading" class="text-center">
                 <div class="loading" style="width: 40px; height: 40px;"></div>
                 <p>Loading admin panel...</p>
             </div>
 
-            <!-- Admin Content -->
             <div id="admin-content" style="display: none;">
                 
-                <!-- Stats Overview -->
                 <div class="stats-grid mb-3">
                     <div class="stat-card">
                         <div class="stat-number" id="total-trips">0</div>
@@ -58,7 +53,6 @@
                     </div>
                 </div>
 
-                <!-- Navigation Tabs -->
                 <div class="card mb-3">
                     <div class="card-header">
                         <div class="flex gap-2">
@@ -70,7 +64,6 @@
                     </div>
                 </div>
 
-                <!-- Trip Management Tab -->
                 <div id="trips-content" class="tab-content">
                     <div class="card">
                         <div class="card-header">
@@ -93,7 +86,6 @@
                                         </tr>
                                     </thead>
                                     <tbody id="trips-table">
-                                        <!-- Trips will be loaded here -->
                                     </tbody>
                                 </table>
                             </div>
@@ -101,7 +93,6 @@
                     </div>
                 </div>
 
-                <!-- Booking Management Tab -->
                 <div id="bookings-content" class="tab-content" style="display: none;">
                     <div class="card">
                         <div class="card-header">
@@ -123,7 +114,6 @@
                                         </tr>
                                     </thead>
                                     <tbody id="bookings-table">
-                                        <!-- Bookings will be loaded here -->
                                     </tbody>
                                 </table>
                             </div>
@@ -131,7 +121,6 @@
                     </div>
                 </div>
 
-                <!-- User Management Tab -->
                 <div id="users-content" class="tab-content" style="display: none;">
                     <div class="card">
                         <div class="card-header">
@@ -152,7 +141,6 @@
                                         </tr>
                                     </thead>
                                     <tbody id="users-table">
-                                        <!-- Users will be loaded here -->
                                     </tbody>
                                 </table>
                             </div>
@@ -160,7 +148,6 @@
                     </div>
                 </div>
 
-                <!-- Schedule Management Tab -->
                 <div id="schedules-content" class="tab-content" style="display: none;">
                     <div class="card">
                         <div class="card-header">
@@ -185,7 +172,6 @@
                                         </tr>
                                     </thead>
                                     <tbody id="schedules-table">
-                                        <!-- Schedules will be loaded here -->
                                     </tbody>
                                 </table>
                             </div>
@@ -196,7 +182,6 @@
         </div>
     </main>
 
-    <!-- Create Trip Modal -->
     <div id="create-trip-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <h3>Create New Trip</h3>
@@ -241,7 +226,58 @@
         </div>
     </div>
 
-    <!-- Edit Schedule Modal -->
+    <div id="edit-trip-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Edit Trip</h3>
+            <form id="edit-trip-form">
+                <input type="hidden" id="edit-trip-id" name="id">
+                <div class="form-group">
+                    <label for="edit-trip-title">Trip Title</label>
+                    <input type="text" id="edit-trip-title" name="title" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-trip-description">Description</label>
+                    <textarea id="edit-trip-description" name="description" class="form-control" rows="3" required></textarea>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-trip-price">Price ($)</label>
+                        <input type="number" id="edit-trip-price" name="price" class="form-control" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-trip-duration">Duration (hours)</label>
+                        <input type="number" id="edit-trip-duration" name="duration_hours" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-trip-capacity">Max Capacity</label>
+                    <input type="number" id="edit-trip-capacity" name="max_capacity" class="form-control" required>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-trip-departure">Departure Location</label>
+                        <input type="text" id="edit-trip-departure" name="departure_location" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-trip-return">Return Location</label>
+                        <input type="text" id="edit-trip-return" name="return_location" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-trip-status">Status</label>
+                    <select id="edit-trip-status" name="is_active" class="form-control" required>
+                        <option value="1">Active</option>
+                        <option value="0">Inactive</option>
+                    </select>
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="btn btn-primary">Update Trip</button>
+                    <button type="button" onclick="closeModal('edit-trip-modal')" class="btn btn-secondary">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="edit-schedule-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <h3>Edit Trip Schedule</h3>
@@ -288,7 +324,6 @@
         </div>
     </div>
 
-    <!-- Create Schedule Modal -->
     <div id="create-schedule-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <h3>Create New Schedule</h3>
@@ -325,7 +360,6 @@
         </div>
     </div>
 
-    <!-- View Booking Modal -->
     <div id="view-booking-modal" class="modal" style="display: none;">
         <div class="modal-content" style="min-width: 700px;">
             <div class="modal-header">
@@ -333,7 +367,6 @@
                 <button type="button" onclick="closeModal('view-booking-modal')" class="close-btn">&times;</button>
             </div>
             <div class="modal-body">
-                <!-- Booking Information -->
                 <div class="booking-section">
                     <h4>Booking Information</h4>
                     <div class="info-grid">
@@ -368,7 +401,6 @@
                     </div>
                 </div>
 
-                <!-- Customer Information -->
                 <div class="booking-section">
                     <h4>Customer Information</h4>
                     <div class="info-grid">
@@ -387,7 +419,6 @@
                     </div>
                 </div>
 
-                <!-- Trip Information -->
                 <div class="booking-section">
                     <h4>Trip Information</h4>
                     <div class="info-grid">
@@ -422,15 +453,12 @@
                     </div>
                 </div>
 
-                <!-- Passengers List -->
                 <div class="booking-section">
                     <h4>Passengers</h4>
                     <div id="passengers-list">
-                        <!-- Passengers will be loaded here -->
                     </div>
                 </div>
 
-                <!-- Special Requirements -->
                 <div class="booking-section" id="special-requirements-section" style="display: none;">
                     <h4>Special Requirements</h4>
                     <div class="info-text" id="special-requirements"></div>
@@ -443,6 +471,74 @@
         </div>
     </div>
 
+    <div id="edit-booking-status-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Edit Booking Status</h3>
+            <form id="edit-booking-status-form">
+                <input type="hidden" id="edit-booking-id" name="id">
+                <div class="form-group">
+                    <label for="edit-booking-reference">Booking Reference</label>
+                    <input type="text" id="edit-booking-reference" class="form-control" readonly style="background-color: #f8f9fa;">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-booking-status">Booking Status</label>
+                        <select id="edit-booking-status" name="booking_status" class="form-control" required>
+                            <option value="pending">Pending</option>
+                            <option value="confirmed">Confirmed</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-payment-status">Payment Status</label>
+                        <select id="edit-payment-status" name="payment_status" class="form-control" required>
+                            <option value="pending">Pending</option>
+                            <option value="paid">Paid</option>
+                            <option value="refunded">Refunded</option>
+                            <option value="failed">Failed</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="btn btn-primary">Update Status</button>
+                    <button type="button" onclick="closeModal('edit-booking-status-modal')" class="btn btn-secondary">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div id="edit-user-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <h3>Edit User</h3>
+            <form id="edit-user-form">
+                <input type="hidden" id="edit-user-id" name="id">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="edit-user-first-name">First Name</label>
+                        <input type="text" id="edit-user-first-name" name="firstName" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="edit-user-last-name">Last Name</label>
+                        <input type="text" id="edit-user-last-name" name="lastName" class="form-control" required>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="edit-user-email">Email</label>
+                    <input type="email" id="edit-user-email" name="email" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label for="edit-user-phone">Phone</label>
+                    <input type="text" id="edit-user-phone" name="phone" class="form-control">
+                </div>
+                <div class="flex gap-2">
+                    <button type="submit" class="btn btn-primary">Update User</button>
+                    <button type="button" onclick="closeModal('edit-user-modal')" class="btn btn-secondary">Cancel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="alert-container"></div>
 
     <script src="/js/auth.js"></script>
@@ -452,44 +548,41 @@
 
         // Initialize admin panel
         async function initializeAdmin() {
-            // Check authentication first
-            const authResult = await checkAuthStatus();
-            
-            if (!requireAuth()) {
-                showAlert('Please login to access the admin panel', 'error');
-                return;
-            }
-            
-            if (!requireRole(['admin'])) {
-                showAlert('Admin access required', 'error');
-                return;
-            }
-
-            currentUser = JSON.parse(localStorage.getItem('user'));
-            
-            if (!currentUser) {
-                showAlert('Authentication required. Redirecting to login...', 'error');
-                setTimeout(() => {
-                    window.location.href = '/login';
-                }, 2000);
-                return;
-            }
+            console.log('Starting admin panel initialization...');
             
             try {
+                // Check authentication first
+                const authResult = await checkAuthStatus();
+                console.log('Auth result:', authResult);
+                
+                // Get current user from localStorage
+                currentUser = JSON.parse(localStorage.getItem('user') || 'null');
+                console.log('Current user:', currentUser);
+                
+                if (!currentUser) {
+                    showAlert('Please login to access the admin panel', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 2000);
+                    return;
+                }
+                
+                if (currentUser.role !== 'admin') {
+                    showAlert('Admin access required', 'error');
+                    setTimeout(() => {
+                        window.location.href = '/dashboard';
+                    }, 2000);
+                    return;
+                }
+
+                console.log('Loading dashboard data...');
                 await loadDashboardData();
                 await loadTrips();
                 showTab('trips');
                 showAlert(`Welcome, ${currentUser.firstName}! Admin panel loaded successfully.`, 'success');
             } catch (error) {
                 console.error('Error loading admin panel:', error);
-                if (error.message.includes('Authentication') || error.message.includes('401')) {
-                    showAlert('Session expired. Please login again.', 'error');
-                    setTimeout(() => {
-                        window.location.href = '/login';
-                    }, 2000);
-                } else {
-                    showAlert('Failed to load admin panel data', 'error');
-                }
+                showAlert('Failed to load admin panel data', 'error');
             } finally {
                 document.getElementById('loading').style.display = 'none';
                 document.getElementById('admin-content').style.display = 'block';
@@ -566,7 +659,7 @@
         // Load trips
         async function loadTrips() {
             try {
-                const response = await fetch('/api/trips');
+                const response = await fetch('/api/trips?admin=true');
                 const trips = await response.json();
                 
                 const tripsTable = document.getElementById('trips-table');
@@ -595,26 +688,55 @@
 
         // Load bookings
         async function loadBookings() {
-            if (dashboardData && dashboardData.recentBookings) {
+            try {
+                // Fetch fresh booking data
+                const response = await fetch('/api/dashboard');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch bookings data');
+                }
+                const data = await response.json();
+                dashboardData = data;
+                
                 const bookingsTable = document.getElementById('bookings-table');
                 bookingsTable.innerHTML = '';
                 
-                dashboardData.recentBookings.forEach(booking => {
-                    const row = document.createElement('tr');
-                    row.innerHTML = `
-                        <td>${booking.booking_reference}</td>
-                        <td>${booking.first_name} ${booking.last_name}</td>
-                        <td>${booking.title}</td>
-                        <td>${formatDate(booking.scheduled_date)}</td>
-                        <td>${booking.number_of_passengers}</td>
-                        <td>$${booking.total_amount}</td>
-                        <td><span class="status-badge status-${booking.booking_status}">${booking.booking_status}</span></td>
-                        <td>
-                            <button onclick="viewBooking(${booking.id})" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">View</button>
-                        </td>
+                if (data.recentBookings && data.recentBookings.length > 0) {
+                    data.recentBookings.forEach(booking => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${booking.booking_reference}</td>
+                            <td>${booking.first_name} ${booking.last_name}</td>
+                            <td>${booking.title}</td>
+                            <td>${formatDate(booking.scheduled_date)}</td>
+                            <td>${booking.number_of_passengers}</td>
+                            <td>$${booking.total_amount}</td>
+                            <td><span class="status-badge status-${booking.booking_status}">${booking.booking_status}</span></td>
+                            <td>
+                                <button onclick="viewBooking(${booking.id})" class="btn btn-secondary" style="padding: 0.25rem 0.5rem; font-size: 0.8rem;">View</button>
+                            </td>
+                        `;
+                        bookingsTable.appendChild(row);
+                    });
+                } else {
+                    bookingsTable.innerHTML = `
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 2rem; color: #666;">
+                                No bookings found
+                            </td>
+                        </tr>
                     `;
-                    bookingsTable.appendChild(row);
-                });
+                }
+            } catch (error) {
+                console.error('Error loading bookings:', error);
+                const bookingsTable = document.getElementById('bookings-table');
+                bookingsTable.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 2rem; color: #dc3545;">
+                            Failed to load bookings: ${error.message}
+                        </td>
+                    </tr>
+                `;
+                showAlert('Failed to load bookings', 'error');
             }
         }
 
@@ -743,6 +865,47 @@
             document.getElementById(modalId).style.display = 'none';
         }
 
+        // Handle edit trip form
+        document.getElementById('edit-trip-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const formData = new FormData(e.target);
+            const tripId = formData.get('id');
+            const tripData = {
+                title: formData.get('title'),
+                description: formData.get('description'),
+                price: parseFloat(formData.get('price')),
+                duration_hours: parseInt(formData.get('duration_hours')),
+                max_capacity: parseInt(formData.get('max_capacity')),
+                departure_location: formData.get('departure_location'),
+                return_location: formData.get('return_location'),
+                is_active: parseInt(formData.get('is_active'))
+            };
+            
+            try {
+                const response = await fetch(`/api/trips/${tripId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(tripData)
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showAlert('Trip updated successfully!', 'success');
+                    closeModal('edit-trip-modal');
+                    loadTrips(); // Reload the trips table
+                } else {
+                    showAlert(result.error || 'Failed to update trip', 'error');
+                }
+            } catch (error) {
+                console.error('Error updating trip:', error);
+                showAlert('Failed to update trip', 'error');
+            }
+        });
+
         // Handle create trip form
         document.getElementById('create-trip-form').addEventListener('submit', async (e) => {
             e.preventDefault();
@@ -860,9 +1023,44 @@
             }
         });
 
-        // Placeholder functions for future implementation
-        function editTrip(tripId) {
-            showAlert('Edit functionality coming soon', 'info');
+        // Edit trip functionality
+        async function editTrip(tripId) {
+            try {
+                console.log('Editing trip with ID:', tripId);
+                
+                // Fetch trip details
+                const response = await fetch(`/api/trips/${tripId}`);
+                console.log('Trip API response status:', response.status);
+                
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    console.error('Trip API error:', errorData);
+                    throw new Error(errorData.error || `HTTP ${response.status}: Failed to fetch trip details`);
+                }
+                
+                const trip = await response.json();
+                console.log('Received trip data:', trip);
+                
+                // Populate the edit form
+                document.getElementById('edit-trip-id').value = trip.id;
+                document.getElementById('edit-trip-title').value = trip.title;
+                document.getElementById('edit-trip-description').value = trip.description;
+                document.getElementById('edit-trip-price').value = trip.price;
+                document.getElementById('edit-trip-duration').value = trip.duration_hours;
+                document.getElementById('edit-trip-capacity').value = trip.max_capacity;
+                document.getElementById('edit-trip-departure').value = trip.departure_location;
+                document.getElementById('edit-trip-return').value = trip.return_location;
+                document.getElementById('edit-trip-status').value = trip.is_active ? '1' : '0';
+                
+                console.log('Form populated successfully');
+                
+                // Show the modal
+                document.getElementById('edit-trip-modal').style.display = 'flex';
+                
+            } catch (error) {
+                console.error('Error loading trip for edit:', error);
+                showAlert(`Failed to load trip details: ${error.message}`, 'error');
+            }
         }
 
         function deleteTrip(tripId) {
@@ -987,15 +1185,48 @@
             document.getElementById('edit-booking-btn').setAttribute('data-booking-id', booking.id);
         }
 
-        // Edit booking status (placeholder for future implementation)
+        // Edit booking status functionality
         function editBookingStatus() {
             const bookingId = document.getElementById('edit-booking-btn').getAttribute('data-booking-id');
-            showAlert('Edit booking status functionality coming soon', 'info');
+            const bookingReference = document.getElementById('booking-reference').textContent;
+            const currentBookingStatus = document.getElementById('booking-status-badge').textContent;
+            const currentPaymentStatus = document.getElementById('payment-status-badge').textContent;
+            
+            // Populate the edit form
+            document.getElementById('edit-booking-id').value = bookingId;
+            document.getElementById('edit-booking-reference').value = bookingReference;
+            document.getElementById('edit-booking-status').value = currentBookingStatus;
+            document.getElementById('edit-payment-status').value = currentPaymentStatus;
+            
+            // Close the view modal and show edit modal
+            closeModal('view-booking-modal');
+            document.getElementById('edit-booking-status-modal').style.display = 'flex';
         }
 
-        function editUser(userId) {
-            showAlert('Edit user functionality coming soon', 'info');
+
+        // Show Edit User Modal
+        async function editUser(userId) {
+            try {
+                // Fetch user details
+                const response = await fetch(`/api/users/${userId}`);
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(errorData.error || 'Failed to fetch user details');
+                }
+                const user = await response.json();
+                // Populate form
+                document.getElementById('edit-user-id').value = user.id;
+                document.getElementById('edit-user-first-name').value = user.first_name;
+                document.getElementById('edit-user-last-name').value = user.last_name;
+                document.getElementById('edit-user-email').value = user.email;
+                document.getElementById('edit-user-phone').value = user.phone || '';
+                // Show modal
+                document.getElementById('edit-user-modal').style.display = 'flex';
+            } catch (error) {
+                showAlert(`Failed to load user: ${error.message}`, 'error');
+            }
         }
+
 
         function toggleUserStatus(userId, currentStatus) {
             showAlert('Toggle user status functionality coming soon', 'info');
@@ -1086,8 +1317,118 @@
             }
         }
 
+        // Utility functions
+        function formatCurrency(amount) {
+            return `$${parseFloat(amount || 0).toFixed(2)}`;
+        }
+
+        function formatDate(dateString) {
+            if (!dateString) return 'N/A';
+            const date = new Date(dateString);
+            return date.toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric'
+            });
+        }
+
+        function formatTime(timeString) {
+            if (!timeString) return 'N/A';
+            const [hours, minutes] = timeString.split(':');
+            const time = new Date();
+            time.setHours(parseInt(hours), parseInt(minutes));
+            return time.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+        }
+
+        function showAlert(message, type = 'info') {
+            const alertContainer = document.getElementById('alert-container');
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.textContent = message;
+            
+            alertContainer.appendChild(alert);
+            
+            setTimeout(() => {
+                alert.remove();
+            }, 5000);
+        }
+
         // Initialize page
         document.addEventListener('DOMContentLoaded', () => {
+            // Handle Edit Booking Status Form Submission
+            const editBookingStatusForm = document.getElementById('edit-booking-status-form');
+            if (editBookingStatusForm) {
+                editBookingStatusForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const bookingId = document.getElementById('edit-booking-id').value;
+                    const bookingStatus = document.getElementById('edit-booking-status').value;
+                    const paymentStatus = document.getElementById('edit-payment-status').value;
+                    
+                    console.log('Updating booking status:', { bookingId, bookingStatus, paymentStatus });
+                    
+                    try {
+                        const response = await fetch(`/api/bookings/${bookingId}/status`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ 
+                                booking_status: bookingStatus, 
+                                payment_status: paymentStatus
+                            })
+                        });
+                        
+                        console.log('Response status:', response.status);
+                        const result = await response.json();
+                        console.log('Response data:', result);
+                        
+                        if (response.ok) {
+                            showAlert('Booking status updated successfully!', 'success');
+                            closeModal('edit-booking-status-modal');
+                            loadBookings(); // Refresh the bookings table
+                        } else {
+                            console.error('Error response:', result);
+                            showAlert(result.error || 'Failed to update booking status', 'error');
+                        }
+                    } catch (error) {
+                        console.error('Network error:', error);
+                        showAlert('Failed to update booking status - Network error', 'error');
+                    }
+                });
+            }
+            
+            // Handle Edit User Form Submission
+            const editUserForm = document.getElementById('edit-user-form');
+            if (editUserForm) {
+                editUserForm.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const userId = document.getElementById('edit-user-id').value;
+                    const firstName = document.getElementById('edit-user-first-name').value;
+                    const lastName = document.getElementById('edit-user-last-name').value;
+                    const email = document.getElementById('edit-user-email').value;
+                    const phone = document.getElementById('edit-user-phone').value;
+                    try {
+                        const response = await fetch(`/api/users/${userId}`, {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ firstName, lastName, email, phone })
+                        });
+                        const result = await response.json();
+                        if (response.ok) {
+                            showAlert('User updated successfully!', 'success');
+                            closeModal('edit-user-modal');
+                            loadUsers();
+                        } else {
+                            showAlert(result.error || 'Failed to update user', 'error');
+                        }
+                    } catch (error) {
+                        showAlert('Failed to update user', 'error');
+                    }
+                });
+            }
+            
             checkAuthStatus();
             initializeAdmin();
         });

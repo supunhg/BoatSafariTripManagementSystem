@@ -4,15 +4,14 @@ const { requireAuth, authorizeRoles } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get all trips with schedules
 router.get('/', async (req, res) => {
     try {
-        const { date, available } = req.query;
+        const { date, available, admin } = req.query;
         
         let query = `
             SELECT 
                 t.id, t.title, t.description, t.price, t.duration_hours, 
-                t.max_capacity, t.departure_location, t.return_location,
+                t.max_capacity, t.departure_location, t.return_location, t.is_active,
                 ts.id as schedule_id, ts.scheduled_date, ts.departure_time, 
                 ts.return_time, ts.available_seats, ts.status,
                 b.name as boat_name, b.capacity as boat_capacity,
@@ -21,25 +20,32 @@ router.get('/', async (req, res) => {
             LEFT JOIN trip_schedules ts ON t.id = ts.trip_id
             LEFT JOIN boats b ON ts.boat_id = b.id
             LEFT JOIN users u ON ts.guide_id = u.id
-            WHERE t.is_active = 1
         `;
         
         const params = [];
+        const conditions = [];
+        
+        if (admin !== 'true') {
+            conditions.push('t.is_active = 1');
+        }
         
         if (date) {
-            query += ' AND ts.scheduled_date = ?';
+            conditions.push('ts.scheduled_date = ?');
             params.push(date);
         }
         
         if (available === 'true') {
-            query += ' AND ts.available_seats > 0 AND ts.status = "scheduled"';
+            conditions.push('ts.available_seats > 0 AND ts.status = "scheduled"');
+        }
+        
+        if (conditions.length > 0) {
+            query += ' WHERE ' + conditions.join(' AND ');
         }
         
         query += ' ORDER BY ts.scheduled_date, ts.departure_time';
         
         const trips = await executeQuery(query, params);
         
-        // Group trips by trip id
         const groupedTrips = trips.reduce((acc, trip) => {
             const tripId = trip.id;
             
@@ -53,6 +59,7 @@ router.get('/', async (req, res) => {
                     max_capacity: trip.max_capacity,
                     departure_location: trip.departure_location,
                     return_location: trip.return_location,
+                    is_active: trip.is_active,
                     schedules: []
                 };
             }
@@ -84,7 +91,6 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Get single trip with schedules
 router.get('/:id', async (req, res) => {
     try {
         const tripId = req.params.id;
@@ -92,7 +98,7 @@ router.get('/:id', async (req, res) => {
         const trips = await executeQuery(`
             SELECT 
                 t.id, t.title, t.description, t.price, t.duration_hours, 
-                t.max_capacity, t.departure_location, t.return_location,
+                t.max_capacity, t.departure_location, t.return_location, t.is_active,
                 ts.id as schedule_id, ts.scheduled_date, ts.departure_time, 
                 ts.return_time, ts.available_seats, ts.status,
                 b.name as boat_name, b.capacity as boat_capacity,
@@ -101,7 +107,7 @@ router.get('/:id', async (req, res) => {
             LEFT JOIN trip_schedules ts ON t.id = ts.trip_id
             LEFT JOIN boats b ON ts.boat_id = b.id
             LEFT JOIN users u ON ts.guide_id = u.id
-            WHERE t.id = ? AND t.is_active = 1
+            WHERE t.id = ?
             ORDER BY ts.scheduled_date, ts.departure_time
         `, [tripId]);
         
@@ -118,6 +124,7 @@ router.get('/:id', async (req, res) => {
             max_capacity: trips[0].max_capacity,
             departure_location: trips[0].departure_location,
             return_location: trips[0].return_location,
+            is_active: trips[0].is_active,
             schedules: trips.filter(t => t.schedule_id).map(t => ({
                 id: t.schedule_id,
                 scheduled_date: t.scheduled_date,
@@ -141,7 +148,6 @@ router.get('/:id', async (req, res) => {
     }
 });
 
-// Create new trip (Admin only)
 router.post('/', requireAuth, authorizeRoles('admin'), async (req, res) => {
     try {
         const { title, description, price, duration_hours, max_capacity, departure_location, return_location } = req.body;
@@ -162,18 +168,17 @@ router.post('/', requireAuth, authorizeRoles('admin'), async (req, res) => {
     }
 });
 
-// Update trip (Admin only)
 router.put('/:id', requireAuth, authorizeRoles('admin'), async (req, res) => {
     try {
         const tripId = req.params.id;
-        const { title, description, price, duration_hours, max_capacity, departure_location, return_location } = req.body;
+        const { title, description, price, duration_hours, max_capacity, departure_location, return_location, is_active } = req.body;
         
         const result = await executeQuery(`
             UPDATE trips 
             SET title = ?, description = ?, price = ?, duration_hours = ?, max_capacity = ?, 
-                departure_location = ?, return_location = ?
+                departure_location = ?, return_location = ?, is_active = ?
             WHERE id = ?
-        `, [title, description, price, duration_hours, max_capacity, departure_location, return_location, tripId]);
+        `, [title, description, price, duration_hours, max_capacity, departure_location, return_location, is_active, tripId]);
         
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: 'Trip not found' });
@@ -187,7 +192,6 @@ router.put('/:id', requireAuth, authorizeRoles('admin'), async (req, res) => {
     }
 });
 
-// Delete trip (Admin only)
 router.delete('/:id', requireAuth, authorizeRoles('admin'), async (req, res) => {
     try {
         const tripId = req.params.id;
@@ -206,7 +210,6 @@ router.delete('/:id', requireAuth, authorizeRoles('admin'), async (req, res) => 
     }
 });
 
-// Get trip schedule by ID
 router.get('/schedule/:scheduleId', async (req, res) => {
     try {
         const scheduleId = req.params.scheduleId;

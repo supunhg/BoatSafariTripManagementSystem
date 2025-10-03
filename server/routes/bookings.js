@@ -5,7 +5,6 @@ const { requireAuth } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Generate unique booking reference
 function generateBookingReference() {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let result = 'BS';
@@ -15,7 +14,6 @@ function generateBookingReference() {
     return result;
 }
 
-// Create booking
 router.post('/', requireAuth, [
     body('tripScheduleId').isInt().withMessage('Valid trip schedule ID is required'),
     body('numberOfPassengers').isInt({ min: 1 }).withMessage('Number of passengers must be at least 1'),
@@ -30,7 +28,6 @@ router.post('/', requireAuth, [
 
         const { tripScheduleId, numberOfPassengers, passengers, paymentMethod, specialRequirements } = req.body;
         
-        // Check if trip schedule exists and has available seats
         const schedules = await executeQuery(`
             SELECT ts.*, t.price, t.title 
             FROM trip_schedules ts 
@@ -48,22 +45,18 @@ router.post('/', requireAuth, [
             return res.status(400).json({ error: 'Not enough seats available' });
         }
         
-        // Calculate total amount
         const totalAmount = schedule.price * numberOfPassengers;
         
-        // Generate booking reference
         const bookingReference = generateBookingReference();
         
-        // Create booking
         const bookingResult = await executeQuery(`
             INSERT INTO bookings (customer_id, trip_schedule_id, number_of_passengers, total_amount, 
                                 booking_status, payment_status, payment_method, special_requirements, booking_reference)
             VALUES (?, ?, ?, ?, 'pending', 'pending', ?, ?, ?)
-        `, [req.session.userId, tripScheduleId, numberOfPassengers, totalAmount, paymentMethod, specialRequirements || null, bookingReference]);
+        `, [req.user.id, tripScheduleId, numberOfPassengers, totalAmount, paymentMethod, specialRequirements || null, bookingReference]);
         
         const bookingId = bookingResult.insertId;
         
-        // Add passengers
         for (const passenger of passengers) {
             await executeQuery(`
                 INSERT INTO passengers (booking_id, first_name, last_name, age, emergency_contact)
@@ -71,22 +64,19 @@ router.post('/', requireAuth, [
             `, [bookingId, passenger.firstName, passenger.lastName, passenger.age || null, passenger.emergencyContact || null]);
         }
         
-        // Update available seats
         await executeQuery(`
             UPDATE trip_schedules SET available_seats = available_seats - ? WHERE id = ?
         `, [numberOfPassengers, tripScheduleId]);
         
-        // Create payment record
         await executeQuery(`
             INSERT INTO payments (booking_id, amount, payment_method, payment_status)
             VALUES (?, ?, ?, ?)
         `, [bookingId, totalAmount, paymentMethod, paymentMethod === 'cash' ? 'pending' : 'pending']);
         
-        // Create notification for customer
         await executeQuery(`
             INSERT INTO notifications (user_id, title, message, type)
             VALUES (?, 'Booking Created', 'Your booking ${bookingReference} has been created successfully. ${paymentMethod === 'cash' ? 'Please pay cash on arrival.' : 'Please complete payment to confirm your booking.'}', 'booking')
-        `, [req.session.userId]);
+        `, [req.user.id]);
         
         res.status(201).json({
             message: 'Booking created successfully',
@@ -102,7 +92,6 @@ router.post('/', requireAuth, [
     }
 });
 
-// Get user's bookings
 router.get('/my-bookings', requireAuth, async (req, res) => {
     try {
         const bookings = await executeQuery(`
@@ -118,9 +107,8 @@ router.get('/my-bookings', requireAuth, async (req, res) => {
             LEFT JOIN users guide ON ts.guide_id = guide.id
             WHERE b.customer_id = ?
             ORDER BY b.created_at DESC
-        `, [req.session.userId]);
+        `, [req.user.id]);
         
-        // Get passengers for each booking
         for (let booking of bookings) {
             const passengers = await executeQuery(`
                 SELECT first_name, last_name, age, emergency_contact
@@ -137,7 +125,6 @@ router.get('/my-bookings', requireAuth, async (req, res) => {
     }
 });
 
-// Get booking by ID
 router.get('/:id', requireAuth, async (req, res) => {
     try {
         const bookingId = req.params.id;
@@ -165,12 +152,10 @@ router.get('/:id', requireAuth, async (req, res) => {
         
         const booking = bookings[0];
         
-        // Check if user can access this booking
         if (booking.customer_id !== req.user.id && !['admin', 'operations'].includes(req.user.role)) {
             return res.status(403).json({ error: 'Access denied' });
         }
         
-        // Get passengers
         const passengers = await executeQuery(`
             SELECT first_name, last_name, age, emergency_contact
             FROM passengers WHERE booking_id = ?
@@ -186,10 +171,87 @@ router.get('/:id', requireAuth, async (req, res) => {
     }
 });
 
-// Confirm booking (Admin/Operations)
+router.put('/:id/status', requireAuth, async (req, res) => {
+    try {
+        if (!['admin', 'operations'].includes(req.user.role)) {
+            return res.status(403).json({ error: 'Access denied' });
+        }
+        
+        const bookingId = req.params.id;
+        const { booking_status, payment_status } = req.body;
+        
+        const validBookingStatus = ['pending', 'confirmed', 'completed', 'cancelled'];
+        const validPaymentStatus = ['pending', 'paid', 'refunded', 'failed'];
+        
+        if (!validBookingStatus.includes(booking_status)) {
+            return res.status(400).json({ error: 'Invalid booking status' });
+        }
+        
+        if (!validPaymentStatus.includes(payment_status)) {
+            return res.status(400).json({ error: 'Invalid payment status' });
+        }
+        
+        const bookings = await executeQuery(`
+            SELECT b.*, ts.id as schedule_id, ts.scheduled_date, ts.departure_time, t.title
+            FROM bookings b
+            JOIN trip_schedules ts ON b.trip_schedule_id = ts.id
+            JOIN trips t ON ts.trip_id = t.id
+            WHERE b.id = ?
+        `, [bookingId]);
+        
+        if (bookings.length === 0) {
+            return res.status(404).json({ error: 'Booking not found' });
+        }
+        
+        const booking = bookings[0];
+        
+        const result = await executeQuery(`
+            UPDATE bookings 
+            SET booking_status = ?, payment_status = ?
+            WHERE id = ?
+        `, [booking_status, payment_status, bookingId]);
+        
+        if (booking_status === 'cancelled' && booking.booking_status !== 'cancelled') {
+            await executeQuery(`
+                UPDATE trip_schedules 
+                SET available_seats = available_seats + ? 
+                WHERE id = ?
+            `, [booking.number_of_passengers, booking.trip_schedule_id]);
+        }
+        
+        if (booking_status !== 'cancelled' && booking.booking_status === 'cancelled') {
+            await executeQuery(`
+                UPDATE trip_schedules 
+                SET available_seats = available_seats - ? 
+                WHERE id = ?
+            `, [booking.number_of_passengers, booking.trip_schedule_id]);
+        }
+        
+        const statusMessages = {
+            'confirmed': `Your booking ${booking.booking_reference} for "${booking.title}" has been confirmed!`,
+            'completed': `Your trip ${booking.booking_reference} for "${booking.title}" has been completed. Thank you for choosing us!`,
+            'cancelled': `Your booking ${booking.booking_reference} for "${booking.title}" has been cancelled.`,
+            'pending': `Your booking ${booking.booking_reference} status has been updated to pending.`
+        };
+        
+        if (statusMessages[booking_status]) {
+            await executeQuery(`
+                INSERT INTO notifications (user_id, title, message, type)
+                VALUES (?, 'Booking Status Updated', ?, 'booking')
+            `, [booking.customer_id, statusMessages[booking_status]]);
+        }
+        
+        res.json({ message: 'Booking status updated successfully' });
+        
+    } catch (error) {
+        console.error('Error updating booking status:', error);
+        res.status(500).json({ error: 'Failed to update booking status' });
+    }
+});
+
 router.put('/:id/confirm', requireAuth, async (req, res) => {
     try {
-        if (!['admin', 'operations'].includes(req.session.userRole)) {
+        if (!['admin', 'operations'].includes(req.user.role)) {
             return res.status(403).json({ error: 'Access denied' });
         }
         
@@ -203,7 +265,6 @@ router.put('/:id/confirm', requireAuth, async (req, res) => {
             return res.status(404).json({ error: 'Booking not found' });
         }
         
-        // Get booking details for notification
         const bookings = await executeQuery(`
             SELECT b.customer_id, b.booking_reference, t.title
             FROM bookings b
@@ -215,7 +276,6 @@ router.put('/:id/confirm', requireAuth, async (req, res) => {
         if (bookings.length > 0) {
             const booking = bookings[0];
             
-            // Create notification for customer
             await executeQuery(`
                 INSERT INTO notifications (user_id, title, message, type)
                 VALUES (?, 'Booking Confirmed', 'Your booking ${booking.booking_reference} for "${booking.title}" has been confirmed!', 'booking')
@@ -230,12 +290,10 @@ router.put('/:id/confirm', requireAuth, async (req, res) => {
     }
 });
 
-// Cancel booking
 router.put('/:id/cancel', requireAuth, async (req, res) => {
     try {
         const bookingId = req.params.id;
         
-        // Get booking details
         const bookings = await executeQuery(`
             SELECT b.*, ts.scheduled_date, ts.departure_time
             FROM bookings b
@@ -249,31 +307,26 @@ router.put('/:id/cancel', requireAuth, async (req, res) => {
         
         const booking = bookings[0];
         
-        // Check if user can cancel this booking
-        if (booking.customer_id !== req.session.userId && !['admin', 'operations'].includes(req.session.userRole)) {
+        if (booking.customer_id !== req.user.id && !['admin', 'operations'].includes(req.user.role)) {
             return res.status(403).json({ error: 'Access denied' });
         }
         
-        // Check if booking can be cancelled (not less than 24 hours before departure)
         const departureDateTime = new Date(`${booking.scheduled_date} ${booking.departure_time}`);
         const now = new Date();
         const hoursDifference = (departureDateTime - now) / (1000 * 60 * 60);
         
-        if (hoursDifference < 24 && booking.customer_id === req.session.userId) {
+        if (hoursDifference < 24 && booking.customer_id === req.user.id) {
             return res.status(400).json({ error: 'Cannot cancel booking less than 24 hours before departure' });
         }
         
-        // Cancel booking
         await executeQuery(`
             UPDATE bookings SET booking_status = 'cancelled' WHERE id = ?
         `, [bookingId]);
         
-        // Restore available seats
         await executeQuery(`
             UPDATE trip_schedules SET available_seats = available_seats + ? WHERE id = ?
         `, [booking.number_of_passengers, booking.trip_schedule_id]);
         
-        // Create notification
         await executeQuery(`
             INSERT INTO notifications (user_id, title, message, type)
             VALUES (?, 'Booking Cancelled', 'Booking ${booking.booking_reference} has been cancelled successfully.', 'booking')
@@ -287,16 +340,14 @@ router.put('/:id/cancel', requireAuth, async (req, res) => {
     }
 });
 
-// Process payment (dummy implementation)
 router.post('/:id/payment', requireAuth, async (req, res) => {
     try {
         const bookingId = req.params.id;
         const { paymentMethod, cardDetails } = req.body;
         
-        // Get booking details
         const bookings = await executeQuery(`
             SELECT * FROM bookings WHERE id = ? AND customer_id = ?
-        `, [bookingId, req.session.userId]);
+        `, [bookingId, req.user.id]);
         
         if (bookings.length === 0) {
             return res.status(404).json({ error: 'Booking not found' });
@@ -308,26 +359,22 @@ router.post('/:id/payment', requireAuth, async (req, res) => {
             return res.status(400).json({ error: 'Payment already completed' });
         }
         
-        // Simulate payment processing
         const transactionId = 'TXN' + Date.now() + Math.random().toString(36).substr(2, 9);
         
-        // Update payment
         await executeQuery(`
             UPDATE payments 
             SET payment_status = 'completed', transaction_id = ?, payment_date = NOW()
             WHERE booking_id = ?
         `, [transactionId, bookingId]);
         
-        // Update booking
         await executeQuery(`
             UPDATE bookings SET payment_status = 'paid', booking_status = 'confirmed' WHERE id = ?
         `, [bookingId]);
         
-        // Create notification
         await executeQuery(`
             INSERT INTO notifications (user_id, title, message, type)
             VALUES (?, 'Payment Successful', 'Payment for booking ${booking.booking_reference} has been processed successfully. Transaction ID: ${transactionId}', 'payment')
-        `, [req.session.userId]);
+        `, [req.user.id]);
         
         res.json({
             message: 'Payment processed successfully',

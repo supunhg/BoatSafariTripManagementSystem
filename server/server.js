@@ -6,7 +6,6 @@ require('dotenv').config();
 
 const { testConnection } = require('./config/database');
 
-// Import routes
 const authRoutes = require('./routes/auth');
 const tripRoutes = require('./routes/trips');
 const bookingRoutes = require('./routes/bookings');
@@ -16,36 +15,31 @@ const dashboardRoutes = require('./routes/dashboard');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Middleware
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Session configuration
 app.use(session({
     secret: process.env.JWT_SECRET || 'your-secret-key',
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        secure: false, // Set to true in production with HTTPS
-        maxAge: 24 * 60 * 60 * 1000 // 24 hours
+        secure: false,
+        maxAge: 24 * 60 * 60 * 1000
     }
 }));
 
-// Serve static files
 app.use(express.static(path.join(__dirname, '../public')));
 app.use('/css', express.static(path.join(__dirname, '../public/css')));
 app.use('/js', express.static(path.join(__dirname, '../public/js')));
 app.use('/images', express.static(path.join(__dirname, '../public/images')));
 
-// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/trips', tripRoutes);
 app.use('/api/bookings', bookingRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 
-// Serve HTML pages
 app.get('/', (req, res) => {
     res.sendFile(path.join(__dirname, '../views/index.html'));
 });
@@ -90,25 +84,17 @@ app.get('/payment/:bookingId', (req, res) => {
     res.sendFile(path.join(__dirname, '../views/payment.html'));
 });
 
-app.get('/test-auth', (req, res) => {
-    res.sendFile(path.join(__dirname, '../views/test-auth.html'));
-});
-
-// Error handling middleware
 app.use((err, req, res, next) => {
     console.error(err.stack);
     res.status(500).json({ error: 'Something went wrong!' });
 });
 
-// 404 handler
 app.use('*', (req, res) => {
     res.status(404).json({ error: 'Page not found' });
 });
 
-// Start server
 async function startServer() {
     try {
-        // Test database connection
         const dbConnected = await testConnection();
         if (!dbConnected) {
             console.log('Warning: Database connection failed. Please check your database configuration.');

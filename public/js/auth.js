@@ -1,17 +1,13 @@
-// Authentication and utility functions
 
-// Check authentication status and update UI
 async function checkAuthStatus() {
     try {
         const response = await fetch('/api/auth/me');
         const result = await response.json();
         
         if (response.ok && result.user) {
-            // User is authenticated
             updateAuthUI(result.user);
             localStorage.setItem('user', JSON.stringify(result.user));
         } else {
-            // User is not authenticated
             updateAuthUI(null);
             localStorage.removeItem('user');
         }
@@ -22,7 +18,6 @@ async function checkAuthStatus() {
     }
 }
 
-// Update authentication UI elements
 function updateAuthUI(user) {
     const authNav = document.getElementById('auth-nav');
     const userInfo = document.getElementById('user-info');
@@ -30,7 +25,6 @@ function updateAuthUI(user) {
     const getStartedBtn = document.getElementById('get-started-btn');
     
     if (user) {
-        // User is logged in
         if (authNav) {
             authNav.innerHTML = '<a href="/dashboard">Dashboard</a>';
         }
@@ -48,7 +42,6 @@ function updateAuthUI(user) {
             getStartedBtn.href = '/dashboard';
         }
     } else {
-        // User is not logged in
         if (authNav) {
             authNav.innerHTML = '<a href="/login">Login</a>';
         }
@@ -64,7 +57,6 @@ function updateAuthUI(user) {
     }
 }
 
-// Logout function
 async function logout() {
     try {
         const response = await fetch('/api/auth/logout', {
@@ -79,13 +71,11 @@ async function logout() {
         }
     } catch (error) {
         console.error('Logout error:', error);
-        // Force logout even if request fails
         localStorage.removeItem('user');
         window.location.href = '/';
     }
 }
 
-// Check if user is authenticated (for protected pages)
 function requireAuth() {
     const user = JSON.parse(localStorage.getItem('user') || 'null');
     if (!user) {
@@ -95,7 +85,6 @@ function requireAuth() {
     return true;
 }
 
-// Check if user has required role
 function requireRole(allowedRoles) {
     const user = JSON.parse(localStorage.getItem('user') || 'null');
     if (!user || !allowedRoles.includes(user.role)) {
@@ -105,7 +94,6 @@ function requireRole(allowedRoles) {
     return true;
 }
 
-// Format date for display
 function formatDate(dateString) {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -116,7 +104,6 @@ function formatDate(dateString) {
     });
 }
 
-// Format time for display
 function formatTime(timeString) {
     const [hours, minutes] = timeString.split(':');
     const date = new Date();
@@ -128,12 +115,10 @@ function formatTime(timeString) {
     });
 }
 
-// Format datetime for display
 function formatDateTime(dateString, timeString) {
     return `${formatDate(dateString)} at ${formatTime(timeString)}`;
 }
 
-// Show loading state on button
 function setButtonLoading(button, loading = true) {
     const text = button.querySelector('.btn-text') || button;
     const spinner = button.querySelector('.loading');
@@ -149,7 +134,6 @@ function setButtonLoading(button, loading = true) {
     }
 }
 
-// Show alert message
 function showAlert(message, type = 'info', containerId = 'alert-container') {
     const container = document.getElementById(containerId);
     if (!container) return;
@@ -167,7 +151,6 @@ function showAlert(message, type = 'info', containerId = 'alert-container') {
         </div>
     `;
     
-    // Auto-hide after 5 seconds
     setTimeout(() => {
         if (container.innerHTML.includes(message)) {
             container.innerHTML = '';
@@ -175,7 +158,6 @@ function showAlert(message, type = 'info', containerId = 'alert-container') {
     }, 5000);
 }
 
-// Make API request with authentication
 async function apiRequest(url, options = {}) {
     const defaultOptions = {
         headers: {
@@ -207,32 +189,27 @@ async function apiRequest(url, options = {}) {
     }
 }
 
-// Validate email format
 function isValidEmail(email) {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return emailRegex.test(email);
 }
 
-// Validate phone format (basic)
 function isValidPhone(phone) {
     const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/;
     return phoneRegex.test(phone.replace(/[\s\-\(\)]/g, ''));
 }
 
-// Get URL parameter
 function getUrlParameter(name) {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get(name);
 }
 
-// Create loading element
 function createLoadingElement() {
     const loading = document.createElement('div');
     loading.className = 'loading';
     return loading;
 }
 
-// Debounce function for search
 function debounce(func, wait) {
     let timeout;
     return function executedFunction(...args) {
@@ -245,7 +222,6 @@ function debounce(func, wait) {
     };
 }
 
-// Format currency
 function formatCurrency(amount) {
     return new Intl.NumberFormat('en-US', {
         style: 'currency',
@@ -253,7 +229,6 @@ function formatCurrency(amount) {
     }).format(amount);
 }
 
-// Calculate age from date of birth
 function calculateAge(dateOfBirth) {
     const today = new Date();
     const birthDate = new Date(dateOfBirth);
@@ -267,11 +242,8 @@ function calculateAge(dateOfBirth) {
     return age;
 }
 
-// Initialize tooltips or other UI components
 function initializeUI() {
-    // Add any global UI initialization here
     
-    // Add click handlers for mobile menu if needed
     const mobileMenuToggle = document.querySelector('.mobile-menu-toggle');
     if (mobileMenuToggle) {
         mobileMenuToggle.addEventListener('click', () => {
@@ -281,7 +253,6 @@ function initializeUI() {
     }
 }
 
-// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', () => {
     initializeUI();
 });

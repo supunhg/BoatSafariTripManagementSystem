@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <nav class="nav-container">
             <a href="/" class="logo">🚢 Boat Safari</a>
@@ -24,12 +23,10 @@
         </nav>
     </header>
 
-    <!-- Main Content -->
     <main class="main-content">
         <div class="container">
             <h1 class="text-center mb-3">Available Safari Trips</h1>
             
-            <!-- Filters -->
             <div class="card mb-3">
                 <div class="card-body">
                     <h3>Filter Trips</h3>
@@ -53,18 +50,14 @@
                 </div>
             </div>
 
-            <!-- Loading State -->
             <div id="loading" class="text-center">
                 <div class="loading" style="width: 40px; height: 40px;"></div>
                 <p>Loading trips...</p>
             </div>
 
-            <!-- Trips Grid -->
             <div class="trips-grid" id="trips-container" style="display: none;">
-                <!-- Trips will be loaded here -->
             </div>
 
-            <!-- No Trips Message -->
             <div id="no-trips" class="text-center" style="display: none;">
                 <h3>No trips found</h3>
                 <p>Try adjusting your filters or check back later for new trips.</p>

@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <nav class="nav-container">
             <a href="/" class="logo">🚢 Boat Safari</a>
@@ -24,21 +23,17 @@
         </nav>
     </header>
 
-    <!-- Main Content -->
     <main class="main-content">
         <div class="container">
             <h1>Operations Management</h1>
 
-            <!-- Loading State -->
             <div id="loading" class="text-center">
                 <div class="loading" style="width: 40px; height: 40px;"></div>
                 <p>Loading operations panel...</p>
             </div>
 
-            <!-- Operations Content -->
             <div id="operations-content" style="display: none;">
                 
-                <!-- Pending Assignments -->
                 <div class="card mb-3">
                     <div class="card-header">
                         <div class="flex justify-between align-center">
@@ -48,24 +43,20 @@
                     </div>
                     <div class="card-body">
                         <div id="pending-assignments">
-                            <!-- Pending assignments will be loaded here -->
                         </div>
                     </div>
                 </div>
 
-                <!-- Upcoming Trips -->
                 <div class="card mb-3">
                     <div class="card-header">
                         <h3>📅 Upcoming Trips (Next 7 Days)</h3>
                     </div>
                     <div class="card-body">
                         <div id="upcoming-trips">
-                            <!-- Upcoming trips will be loaded here -->
                         </div>
                     </div>
                 </div>
 
-                <!-- All Schedules Management -->
                 <div class="card">
                     <div class="card-header">
                         <div class="flex justify-between align-center">
@@ -91,7 +82,6 @@
                                     </tr>
                                 </thead>
                                 <tbody id="schedules-table">
-                                    <!-- Schedules will be loaded here -->
                                 </tbody>
                             </table>
                         </div>
@@ -101,14 +91,12 @@
         </div>
     </main>
 
-    <!-- Assignment Modal -->
     <div id="assignment-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <h3>Assign Resources</h3>
             <form id="assignment-form">
                 <input type="hidden" id="assignment-schedule-id">
                 <div id="assignment-details" class="mb-3">
-                    <!-- Assignment details will be shown here -->
                 </div>
                 <div class="form-group">
                     <label for="assignment-boat">Boat</label>

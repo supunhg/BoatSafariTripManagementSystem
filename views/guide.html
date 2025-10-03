@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <nav class="nav-container">
             <a href="/" class="logo">🚢 Boat Safari</a>
@@ -24,21 +23,17 @@
         </nav>
     </header>
 
-    <!-- Main Content -->
     <main class="main-content">
         <div class="container">
             <h1>Guide Panel</h1>
 
-            <!-- Loading State -->
             <div id="loading" class="text-center">
                 <div class="loading" style="width: 40px; height: 40px;"></div>
                 <p>Loading your assignments...</p>
             </div>
 
-            <!-- Guide Content -->
             <div id="guide-content" style="display: none;">
                 
-                <!-- Today's Trips -->
                 <div class="card mb-3">
                     <div class="card-header">
                         <div class="flex justify-between align-center">
@@ -48,24 +43,20 @@
                     </div>
                     <div class="card-body">
                         <div id="todays-trips">
-                            <!-- Today's trips will be loaded here -->
                         </div>
                     </div>
                 </div>
 
-                <!-- Upcoming Trips -->
                 <div class="card mb-3">
                     <div class="card-header">
                         <h3>📅 Upcoming Assignments (Next 7 Days)</h3>
                     </div>
                     <div class="card-body">
                         <div id="upcoming-trips">
-                            <!-- Upcoming trips will be loaded here -->
                         </div>
                     </div>
                 </div>
 
-                <!-- Trip History -->
                 <div class="card">
                     <div class="card-header">
                         <div class="flex justify-between align-center">
@@ -91,7 +82,6 @@
                                     </tr>
                                 </thead>
                                 <tbody id="history-table">
-                                    <!-- Trip history will be loaded here -->
                                 </tbody>
                             </table>
                         </div>
@@ -101,12 +91,10 @@
         </div>
     </main>
 
-    <!-- Trip Details Modal -->
     <div id="trip-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <h3>Trip Details</h3>
             <div id="trip-details">
-                <!-- Trip details will be shown here -->
             </div>
             <div class="flex gap-2">
                 <button type="button" onclick="closeTripModal()" class="btn btn-secondary">Close</button>
@@ -114,14 +102,12 @@
         </div>
     </div>
 
-    <!-- Check-in Modal -->
     <div id="checkin-modal" class="modal" style="display: none;">
         <div class="modal-content">
             <h3>Passenger Check-in</h3>
             <form id="checkin-form">
                 <input type="hidden" id="checkin-schedule-id">
                 <div id="passenger-list">
-                    <!-- Passenger list will be shown here -->
                 </div>
                 <div class="flex gap-2">
                     <button type="submit" class="btn btn-primary">

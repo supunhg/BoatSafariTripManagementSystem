@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <nav class="nav-container">
             <a href="/" class="logo">🚢 Boat Safari</a>
@@ -23,36 +22,29 @@
         </nav>
     </header>
 
-    <!-- Main Content -->
     <main class="main-content">
         <div class="container">
             
-            <!-- Loading State -->
             <div id="loading" class="text-center">
                 <div class="loading" style="width: 40px; height: 40px;"></div>
                 <p>Loading trip details...</p>
             </div>
 
-            <!-- Booking Form -->
             <div id="booking-container" style="display: none;">
                 <h1>Book Your Safari Trip</h1>
 
                 <div id="alert-container"></div>
 
-                <!-- Trip Details -->
                 <div class="card mb-3">
                     <div class="card-header">Trip Details</div>
                     <div class="card-body" id="trip-details">
-                        <!-- Trip details will be loaded here -->
                     </div>
                 </div>
 
-                <!-- Booking Form -->
                 <form id="booking-form" class="card">
                     <div class="card-header">Booking Information</div>
                     <div class="card-body">
                         
-                        <!-- Number of Passengers -->
                         <div class="form-group">
                             <label for="numberOfPassengers">Number of Passengers</label>
                             <select id="numberOfPassengers" name="numberOfPassengers" class="form-control" required>
@@ -68,15 +60,12 @@
                             </select>
                         </div>
 
-                        <!-- Passenger Details -->
                         <div id="passenger-details" style="display: none;">
                             <h3>Passenger Details</h3>
                             <div id="passengers-container">
-                                <!-- Passenger forms will be added dynamically -->
                             </div>
                         </div>
 
-                        <!-- Payment Method -->
                         <div class="form-group">
                             <label>Payment Method</label>
                             <div>
@@ -91,14 +80,12 @@
                             </div>
                         </div>
 
-                        <!-- Special Requirements -->
                         <div class="form-group">
                             <label for="specialRequirements">Special Requirements (Optional)</label>
                             <textarea id="specialRequirements" name="specialRequirements" class="form-control" rows="3" 
                                 placeholder="Any special dietary requirements, accessibility needs, or other requests..."></textarea>
                         </div>
 
-                        <!-- Booking Summary -->
                         <div class="card" style="background: #f8f9fa; border: 1px solid #dee2e6;">
                             <div class="card-body">
                                 <h4>Booking Summary</h4>
@@ -118,7 +105,6 @@
                             </div>
                         </div>
 
-                        <!-- Submit Buttons -->
                         <div class="text-center mt-3">
                             <button type="button" onclick="window.history.back()" class="btn btn-secondary">
                                 ← Back to Trips
@@ -132,7 +118,6 @@
                 </form>
             </div>
 
-            <!-- Error State -->
             <div id="error-container" style="display: none;" class="text-center">
                 <h2>Trip Not Found</h2>
                 <p>The requested trip schedule could not be found or is no longer available.</p>

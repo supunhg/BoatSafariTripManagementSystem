@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <nav class="nav-container">
             <a href="/" class="logo">🚢 Boat Safari</a>
@@ -23,36 +22,29 @@
         </nav>
     </header>
 
-    <!-- Main Content -->
     <main class="main-content">
         <div class="container">
             
-            <!-- Loading State -->
             <div id="loading" class="text-center">
                 <div class="loading" style="width: 40px; height: 40px;"></div>
                 <p>Loading payment details...</p>
             </div>
 
-            <!-- Payment Container -->
             <div id="payment-container" style="display: none;">
                 <h1>Complete Your Payment</h1>
 
                 <div id="alert-container"></div>
 
-                <!-- Booking Summary -->
                 <div class="card mb-3">
                     <div class="card-header">Booking Summary</div>
                     <div class="card-body" id="booking-summary">
-                        <!-- Booking details will be loaded here -->
                     </div>
                 </div>
 
-                <!-- Payment Form -->
                 <div class="card">
                     <div class="card-header">Payment Information</div>
                     <div class="card-body">
                         
-                        <!-- Payment Method Selection -->
                         <div class="form-group">
                             <label>Payment Method</label>
                             <div style="margin-bottom: 1rem;">
@@ -67,7 +59,6 @@
                             </div>
                         </div>
 
-                        <!-- Card Payment Form -->
                         <div id="card-payment-form">
                             <div class="alert alert-info">
                                 <strong>Demo Mode:</strong> This is a dummy payment system for demonstration purposes. 
@@ -106,7 +97,6 @@
                                               placeholder="123 Main St, City, State, ZIP" required></textarea>
                                 </div>
 
-                                <!-- Payment Summary -->
                                 <div class="card" style="background: #f8f9fa; border: 1px solid #dee2e6; margin-bottom: 1rem;">
                                     <div class="card-body">
                                         <h4>Payment Summary</h4>
@@ -138,7 +128,6 @@
                             </form>
                         </div>
 
-                        <!-- Cash Payment Option -->
                         <div id="cash-payment-form" style="display: none;">
                             <div class="alert alert-info">
                                 <h4>💵 Cash Payment Selected</h4>
@@ -169,7 +158,6 @@
                 </div>
             </div>
 
-            <!-- Error State -->
             <div id="error-container" style="display: none;" class="text-center">
                 <h2>Booking Not Found</h2>
                 <p>The requested booking could not be found or payment has already been completed.</p>

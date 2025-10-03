@@ -4,7 +4,6 @@ const { requireAuth, authorizeRoles } = require('../middleware/auth');
 
 const router = express.Router();
 
-// Get all users (Admin only)
 router.get('/', requireAuth, authorizeRoles('admin'), async (req, res) => {
     try {
         const users = await executeQuery(`
@@ -20,7 +19,6 @@ router.get('/', requireAuth, authorizeRoles('admin'), async (req, res) => {
     }
 });
 
-// Get guides list
 router.get('/guides', requireAuth, authorizeRoles('admin', 'operations'), async (req, res) => {
     try {
         const guides = await executeQuery(`
@@ -37,7 +35,6 @@ router.get('/guides', requireAuth, authorizeRoles('admin', 'operations'), async 
     }
 });
 
-// Update user role (Admin only)
 router.put('/:id/role', requireAuth, authorizeRoles('admin'), async (req, res) => {
     try {
         const userId = req.params.id;
@@ -62,7 +59,6 @@ router.put('/:id/role', requireAuth, authorizeRoles('admin'), async (req, res) =
     }
 });
 
-// Activate/Deactivate user (Admin only)
 router.put('/:id/status', requireAuth, authorizeRoles('admin'), async (req, res) => {
     try {
         const userId = req.params.id;
@@ -83,12 +79,10 @@ router.put('/:id/status', requireAuth, authorizeRoles('admin'), async (req, res)
     }
 });
 
-// Get user profile
 router.get('/:id', requireAuth, async (req, res) => {
     try {
         const userId = req.params.id;
         
-        // Check if user can access this profile
         if (userId != req.user.id && !['admin'].includes(req.user.role)) {
             return res.status(403).json({ error: 'Access denied' });
         }
@@ -109,13 +103,11 @@ router.get('/:id', requireAuth, async (req, res) => {
     }
 });
 
-// Update user profile
 router.put('/:id', requireAuth, async (req, res) => {
     try {
         const userId = req.params.id;
         const { firstName, lastName, email, phone } = req.body;
         
-        // Check if user can update this profile
         if (userId != req.user.id && !['admin'].includes(req.user.role)) {
             return res.status(403).json({ error: 'Access denied' });
         }

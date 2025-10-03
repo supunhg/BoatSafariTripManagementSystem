@@ -7,7 +7,6 @@
     <link rel="stylesheet" href="/css/style.css">
 </head>
 <body>
-    <!-- Header -->
     <header class="header">
         <nav class="nav-container">
             <a href="/" class="logo">🚢 Boat Safari</a>
@@ -23,26 +22,21 @@
         </nav>
     </header>
 
-    <!-- Main Content -->
     <main class="main-content">
         <div class="container">
             <div class="flex justify-between align-center mb-3">
                 <h1>Dashboard</h1>
                 <div id="role-based-nav">
-                    <!-- Role-based navigation will be inserted here -->
                 </div>
             </div>
 
-            <!-- Loading State -->
             <div id="loading" class="text-center">
                 <div class="loading" style="width: 40px; height: 40px;"></div>
                 <p>Loading dashboard...</p>
             </div>
 
-            <!-- Dashboard Content -->
             <div id="dashboard-content" style="display: none;">
                 
-                <!-- Customer Dashboard -->
                 <div id="customer-dashboard" style="display: none;">
                     <h2>My Bookings</h2>
                     
@@ -50,7 +44,6 @@
                         <div class="card-header">Recent Bookings</div>
                         <div class="card-body">
                             <div id="customer-bookings">
-                                <!-- Customer bookings will be loaded here -->
                             </div>
                         </div>
                     </div>
@@ -59,13 +52,11 @@
                         <div class="card-header">Notifications</div>
                         <div class="card-body">
                             <div id="customer-notifications">
-                                <!-- Notifications will be loaded here -->
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Admin Dashboard -->
                 <div id="admin-dashboard" style="display: none;">
                     <div class="stats-grid">
                         <div class="stat-card">
@@ -103,7 +94,6 @@
                                         </tr>
                                     </thead>
                                     <tbody id="admin-bookings">
-                                        <!-- Admin bookings will be loaded here -->
                                     </tbody>
                                 </table>
                             </div>
@@ -111,7 +101,6 @@
                     </div>
                 </div>
 
-                <!-- Operations Dashboard -->
                 <div id="operations-dashboard" style="display: none;">
                     <h2>Operations Management</h2>
                     
@@ -119,7 +108,6 @@
                         <div class="card-header">Pending Assignments</div>
                         <div class="card-body">
                             <div id="pending-assignments">
-                                <!-- Pending assignments will be loaded here -->
                             </div>
                         </div>
                     </div>
@@ -128,13 +116,11 @@
                         <div class="card-header">Upcoming Trips (Next 7 Days)</div>
                         <div class="card-body">
                             <div id="upcoming-trips">
-                                <!-- Upcoming trips will be loaded here -->
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Guide Dashboard -->
                 <div id="guide-dashboard" style="display: none;">
                     <h2>My Assignments</h2>
                     
@@ -142,7 +128,6 @@
                         <div class="card-header">Upcoming Assignments</div>
                         <div class="card-body">
                             <div id="guide-assignments">
-                                <!-- Guide assignments will be loaded here -->
                             </div>
                         </div>
                     </div>
@@ -151,7 +136,6 @@
                         <div class="card-header">Notifications</div>
                         <div class="card-body">
                             <div id="guide-notifications">
-                                <!-- Notifications will be loaded here -->
                             </div>
                         </div>
                     </div>
@@ -160,7 +144,6 @@
         </div>
     </main>
 
-    <!-- Assignment Modal (for Operations) -->
     <div id="assignment-modal" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000;">
         <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; padding: 2rem; border-radius: 10px; min-width: 400px;">
             <h3>Assign Boat and Guide</h3>
