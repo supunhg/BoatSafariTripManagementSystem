@@ -106,10 +106,10 @@ The system comes with pre-configured accounts:
 
 | Role | Username | Password | Access Level |
 |------|----------|----------|--------------|
-| Admin | admin | password123 | Full system access |
-| Operations | operations | password123 | Operations management |
-| Guide | guide1 | password123 | Trip guidance |
-| Customer | customer1 | password123 | Booking and trips |
+| Admin | admin | password | Full system access |
+| Operations | operations | password | Operations management |
+| Guide | guide1 | password | Trip guidance |
+| Customer | customer1 | password | Booking and trips |
 
 **Important**: Change these default passwords in production environments.
 
